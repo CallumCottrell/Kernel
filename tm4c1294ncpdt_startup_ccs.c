@@ -23,7 +23,8 @@
 //*****************************************************************************
 
 #include <stdint.h>
-
+#include <UART.h>
+#include <SysTick.h>
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -33,6 +34,7 @@ void ResetISR(void);
 static void NmiSR(void);
 static void FaultISR(void);
 static void IntDefaultHandler(void);
+//Is this where I put the handler for systick and uart?
 
 //*****************************************************************************
 //
@@ -41,6 +43,8 @@ static void IntDefaultHandler(void);
 //
 //*****************************************************************************
 extern void _c_int00(void);
+extern void UART0_IntHandler(void);
+extern void SysTickHandler(void);
 
 //*****************************************************************************
 //
@@ -82,13 +86,13 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Debug monitor handler
     0,                                      // Reserved
     IntDefaultHandler,                      // The PendSV handler
-    IntDefaultHandler,                      // The SysTick handler
+    SysTickHandler,                         // The SysTick handler //Going to change this
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                      // UART0 Rx and Tx
+    UART0_IntHandler,                       // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
