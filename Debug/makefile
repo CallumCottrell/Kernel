@@ -10,12 +10,16 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./Process.obj" \
 "./SysTick.obj" \
 "./UART.obj" \
 "./application.obj" \
 "./cqueue.obj" \
 "./time.obj" \
 "./tm4c1294ncpdt_startup_ccs.obj" \
+"./kernel/Kernel.obj" \
+"./kernel/Messages.obj" \
+"./kernel/SVC.obj" \
 "../tm4c1294ncpdt.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -28,7 +32,9 @@ RMDIR := RMDIR /S/Q
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir_vars.mk
+-include kernel/subdir_vars.mk
 -include subdir_rules.mk
+-include kernel/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -145,7 +151,7 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 Kernel.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: ARM Linker'
-	"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --define=ccs="ccs" --define=PART_TM4C1294NCPDT -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"Kernel.map" --heap_size=0 --stack_size=512 -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="Kernel_linkInfo.xml" --rom_model -o "Kernel.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --define=ccs="ccs" --define=PART_TM4C1294NCPDT -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"Kernel.map" --heap_size=256000 --stack_size=2048 -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="Kernel_linkInfo.xml" --rom_model -o "Kernel.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
@@ -159,8 +165,8 @@ Kernel.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" 
-	-$(RM) "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" 
+	-$(RM) "Process.obj" "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" "kernel\Kernel.obj" "kernel\Messages.obj" "kernel\SVC.obj" 
+	-$(RM) "Process.d" "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" "kernel\Kernel.d" "kernel\Messages.d" "kernel\SVC.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

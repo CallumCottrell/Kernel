@@ -16,6 +16,31 @@ extern void systick_init();
 
 struct pcb *running;
 
+void initPCBs() {
+    priority1 = malloc(sizeof(struct queueStruct));
+}
+
+void schedule() {
+    if (getSize(priority1)){
+        running = malloc(sizeof(struct pcb));
+    }
+}
+
+void addProcess(int pid, int priority){
+    switch (priority){
+    case 1:
+        enqueue(priority1, pid);
+        break;
+    default:
+
+        break;
+    }
+}
+int getPID();
+
+void nice();
+
+
 void SVCall(void)
 {
 /* Supervisor call (trap) entry point
@@ -93,7 +118,7 @@ if (firstSVCcall)
 
     firstSVCcall = FALSE;
     /* Start SysTick */
-    systick_init();
+    //systick_init();
 
     /*
      - Change the current LR to indicate return to Thread mode using the PSP
@@ -117,17 +142,16 @@ else /* Subsequent SVCs */
    assigning the value of R7 (arptr -> r7) to kcaptr
  */
 
-#ifdef FOR_KERNEL_ARGS
+
     kcaptr = (struct kcallargs *) argptr -> r7;
     switch(kcaptr -> code)
     {
-    case KERNEL_FUNCTION_XXX:
-        kcaptr -> rtnvalue = do_function_xxx();
-    break;
+//    case KERNEL_FUNCTION_XXX:
+//        kcaptr -> rtnvalue = do_function_xxx();
+//    break;
     default:
         kcaptr -> rtnvalue = -1;
     }
-#endif
 
 }
 
