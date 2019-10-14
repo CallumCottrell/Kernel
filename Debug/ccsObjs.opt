@@ -1,0 +1,1 @@
+"./SysTick.obj" "./UART.obj" "./application.obj" "./cqueue.obj" "./time.obj" "./tm4c1294ncpdt_startup_ccs.obj" "../tm4c1294ncpdt.cmd" -llibc.a 
