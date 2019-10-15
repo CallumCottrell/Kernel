@@ -23,6 +23,7 @@ void initPCBs() {
 void schedule() {
     if (getSize(priority1)){
         running = malloc(sizeof(struct pcb));
+
     }
 }
 
@@ -30,6 +31,7 @@ void addProcess(int pid, int priority){
     switch (priority){
     case 1:
         enqueue(priority1, pid);
+
         break;
     default:
 
