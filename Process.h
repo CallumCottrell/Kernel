@@ -62,7 +62,8 @@ unsigned long psr;
 struct pcb
 {
 /* Stack pointer - r13 (PSP) */
-unsigned long sp;
+unsigned int SP;
+unsigned int PID;
 /* Links to adjacent PCBs */
 struct pcb *next;
 struct pcb *prev;

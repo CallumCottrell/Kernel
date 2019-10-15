@@ -13,6 +13,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "Process.h"
 #include "time.h"
@@ -32,33 +33,6 @@ extern queue *outQueue;
 
 extern int alarmPtr;
 extern int alarmTenthSeconds;
-
-volatile int helloValue = 0;
-
-extern struct pcb *running;
-
-void main (void) {
-
-
-
-}
-
-
-//Trying to pass readTime() to this
-//Register a process that may be used. Only called at the initialization stage, for each process.
-int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
-    struct stack_frame *pStack = malloc(sizeof(struct stack_frame));
-    pStack->psr = 0x01000000; // Thumb mode
-    pStack->pc = (unsigned int)func_name;
-
-    return 1;
-}
-
-
-void hello(){
-   helloValue = 5;
-}
-
 
 //void main(void){
 //

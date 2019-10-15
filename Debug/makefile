@@ -17,7 +17,6 @@ ORDERED_OBJS += \
 "./cqueue.obj" \
 "./time.obj" \
 "./tm4c1294ncpdt_startup_ccs.obj" \
-"./kernel/Kernel.obj" \
 "./kernel/Messages.obj" \
 "./kernel/SVC.obj" \
 "../tm4c1294ncpdt.cmd" \
@@ -165,8 +164,8 @@ Kernel.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Process.obj" "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" "kernel\Kernel.obj" "kernel\Messages.obj" "kernel\SVC.obj" 
-	-$(RM) "Process.d" "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" "kernel\Kernel.d" "kernel\Messages.d" "kernel\SVC.d" 
+	-$(RM) "Process.obj" "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" "kernel\Messages.obj" "kernel\SVC.obj" 
+	-$(RM) "Process.d" "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" "kernel\Messages.d" "kernel\SVC.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

@@ -11,33 +11,96 @@
 #include <stdio.h>
 #include "process.h"
 #include "KernelCalls.h"
-
+#include <stdlib.h>
 extern void systick_init();
 
-struct pcb *running;
+//A pcb that is running for each priority level
+struct pcb *running[5];
+int priorityLevel;
 
-void initPCBs() {
-    priority1 = malloc(sizeof(struct queueStruct));
+//Function prototypes
+void hello();
+int regProcess();
+void initKernel();
+void addPCB(struct pcb *new, int priority);
+int helloValue = 0;
+
+void main (void) {
+
+   regProcess(hello, 1000, 4);
+   initKernel();
+   SVC();
+
+}
+
+
+//Trying to pass readTime() to this
+//Register a process that may be used. Only called at the initialization stage, for each process.
+int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
+
+    //Allocate 512 bytes for the process' stack
+    unsigned int *stackPointer = (unsigned int *)malloc(512*sizeof(unsigned int));
+    //Stack pointer currently points to the base of the stack.
+    struct stack_frame *pStack = (struct stack_frame *)stackPointer;
+    //Make a new PCB for this process to have its place in the queues
+    struct pcb *newPCB = malloc(sizeof(struct pcb));
+    //Add the PCB to its priority queue
+    addPCB(newPCB, priority);
+    //Set the stack pointer
+    newPCB->SP = (unsigned int) pStack;
+
+    pStack->psr = 0x01000000; // Thumb mode
+    pStack->pc = (unsigned int)func_name; // Begin executing the function with PC = start of func
+
+    return 1;
+}
+
+
+void hello(){
+   helloValue = 5;
+}
+
+void terminate(){
+
+}
+
+
+//Set the priority level to lowest by default and pcb pointers to null.
+void initKernel(){
+    int i;
+    for ( i=0; i< 5; i++){
+        if (running[i] !=0)
+            priorityLevel=i;
+    }
+    volatile int check;
+}
+
+// Add a pcb to its priority queue
+void addPCB(struct pcb *new, int priority){
+
+    //If the priority queue is empty
+    if (!running[priority]){
+        new -> next = new;
+        new -> prev = new;
+        running[priority]= new;
+    }
+    //Queue not empty, add in the new PCB
+    else {
+    new->next = running[priority]->next;
+    running[priority]->next = new;
+    new->prev = running[priority];
+    running[priority] = new;
+    }
 }
 
 void schedule() {
-    if (getSize(priority1)){
-        running = malloc(sizeof(struct pcb));
 
-    }
 }
 
 void addProcess(int pid, int priority){
-    switch (priority){
-    case 1:
-        enqueue(priority1, pid);
 
-        break;
-    default:
-
-        break;
-    }
 }
+
 int getPID();
 
 void nice();
@@ -116,7 +179,7 @@ if (firstSVCcall)
    should be increased by 8 * sizeof(unsigned int).
  * sp is increased because the stack runs from low to high memory.
 */
-    set_PSP(running -> sp + 8 * sizeof(unsigned int));
+    set_PSP(running[priorityLevel] -> SP + 8 * sizeof(unsigned int));
 
     firstSVCcall = FALSE;
     /* Start SysTick */
