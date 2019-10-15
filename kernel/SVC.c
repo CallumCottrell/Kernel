@@ -23,6 +23,8 @@ void hello();
 int regProcess();
 void initKernel();
 void addPCB(struct pcb *new, int priority);
+void terminate();
+
 int helloValue = 0;
 
 void main (void) {
@@ -51,7 +53,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
     pStack->psr = 0x01000000; // Thumb mode
     pStack->pc = (unsigned int)func_name; // Begin executing the function with PC = start of func
-
+    pStack->lr = (unsigned int)&terminate;
     return 1;
 }
 
@@ -61,7 +63,9 @@ void hello(){
 }
 
 void terminate(){
+    while(1){
 
+    }
 }
 
 
