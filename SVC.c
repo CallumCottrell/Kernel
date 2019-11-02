@@ -12,15 +12,21 @@
 #include "process.h"
 #include "KernelCalls.h"
 #include <stdlib.h>
-extern void systick_init();
+#include "UART.h"
+#include "SysTick.h"
 
+#define NVIC_SYS_PRI3_R (*((volatile unsigned long*)0xE000ED20))
+#define PENDSV_LOWEST_PRIORITY 0X00E00000
+#define THUMB_MODE 0x01000000
 //A pcb that is running for each priority level
 struct pcb *running[5];
 int priorityLevel;
 
 //Function prototypes
 void hello();
+void goodbye();
 int regProcess();
+void findNextProcess();
 void initKernel();
 void addPCB(struct pcb *new, int priority);
 void terminate();
@@ -30,6 +36,7 @@ int helloValue = 0;
 void main (void) {
 
    regProcess(hello, 1000, 4);
+   regProcess(goodbye, 1001, 4);
    initKernel();
    SVC();
 
@@ -41,7 +48,7 @@ void main (void) {
 int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
     //Allocate 512 bytes for the process' stack
-    unsigned int *stackPointer = (unsigned int *)malloc(512*sizeof(unsigned int));
+    unsigned int *stackPointer = (unsigned int *)malloc(1024*sizeof(unsigned char));
     //Stack pointer currently points to the base of the stack.
     struct stack_frame *pStack = (struct stack_frame *)stackPointer;
     //Make a new PCB for this process to have its place in the queues
@@ -51,7 +58,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     //Set the stack pointer
     newPCB->SP = (unsigned int) pStack;
 
-    pStack->psr = 0x01000000; // Thumb mode
+    pStack->psr = THUMB_MODE; // Thumb mode
     pStack->pc = (unsigned int)func_name; // Begin executing the function with PC = start of func
     pStack->lr = (unsigned int)&terminate;
     return 1;
@@ -62,21 +69,34 @@ void hello(){
    helloValue = 5;
 }
 
-void terminate(){
-    while(1){
+void goodbye(){
+    helloValue = 20000;
+}
 
-    }
+void terminate(){
+   helloValue = 10;
 }
 
 
 //Set the priority level to lowest by default and pcb pointers to null.
 void initKernel(){
     int i;
-    for ( i=0; i< 5; i++){
-        if (running[i] !=0)
-            priorityLevel=i;
-    }
+    //Find the process to run first
+    findNextProcess();
     volatile int check;
+    /* Initialize UART */
+     UART0_Init();           // Initialize UART0
+     InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
+     UART0_IntEnable(UART_INT_RX | UART_INT_TX); // Enable Receive and Transmit interrupts
+     InterruptMasterEnable();      // Enable Master (CPU) Interrupts
+     /* Initialize Systick */
+     SysTickPeriod(MAX_WAIT);
+     SysTickIntEnable();
+     SysTickStart();
+
+     //Set pendsv to lowest priority
+     NVIC_SYS_PRI3_R |= PENDSV_LOWEST_PRIORITY;
+
 }
 
 // Add a pcb to its priority queue
@@ -97,8 +117,12 @@ void addPCB(struct pcb *new, int priority){
     }
 }
 
-void schedule() {
-
+void findNextProcess() {
+    int i;
+     for ( i=0; i< 5; i++){
+         if (running[i] !=0)
+             priorityLevel=i;
+     }
 }
 
 void addProcess(int pid, int priority){
@@ -126,6 +150,8 @@ __asm("     PUSH    {LR}");
 /* Trapping source: MSP or PSP? */
 __asm("     TST     LR,#4");    /* Bit #4 indicates MSP (0) or PSP (1) */
 __asm("     BNE     RtnViaPSP");
+__asm(" movw    R7,#0x0041");  /* Lower 16 [and clear top 16] */
+__asm(" movt    R7,#0x0000");
 
 /* Trapping source is MSP - save r4-r11 on stack (default, so just push) */
 __asm("     PUSH    {r4-r11}");
@@ -224,4 +250,18 @@ else /* Subsequent SVCs */
 
 }
 
+}
+
+void pendSVHandler(){
+
+    save_registers();
+    nextProcess();
+    restore_registers();
+
+}
+
+void nextProcess() {
+    running[priorityLevel] -> SP = get_PSP();
+    running[priorityLevel] = running[priorityLevel]->next;
+    set_PSP(running[priorityLevel]->SP);
 }

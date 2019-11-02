@@ -8,7 +8,8 @@ Systick sample code with minor additions by Callum Cottrell
 // Systick Reload Value Register (STRELOAD)
 #define ST_RELOAD_R (*((volatile unsigned long *)0xE000E014))  
 
-
+#define TRIGGER_PENDSV 0x10000000
+#define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
 // SysTick defines 
 #define ST_CTRL_COUNT      0x00010000  // Count Flag for STCTRL
 #define ST_CTRL_CLK_SRC    0x00000004  // Clock Source for STCTRL
@@ -75,6 +76,7 @@ tenthSecondsCounter++; //tick
 if (tenthSecondsCounter == tenthSecondsAlarm)
     alarmPtr = 1;
 
+NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
 
 }
 

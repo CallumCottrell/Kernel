@@ -10,15 +10,15 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./Messages.obj" \
 "./Process.obj" \
+"./SVC.obj" \
 "./SysTick.obj" \
 "./UART.obj" \
 "./application.obj" \
 "./cqueue.obj" \
 "./time.obj" \
 "./tm4c1294ncpdt_startup_ccs.obj" \
-"./kernel/Messages.obj" \
-"./kernel/SVC.obj" \
 "../tm4c1294ncpdt.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -31,9 +31,7 @@ RMDIR := RMDIR /S/Q
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir_vars.mk
--include kernel/subdir_vars.mk
 -include subdir_rules.mk
--include kernel/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -164,8 +162,8 @@ Kernel.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Process.obj" "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" "kernel\Messages.obj" "kernel\SVC.obj" 
-	-$(RM) "Process.d" "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" "kernel\Messages.d" "kernel\SVC.d" 
+	-$(RM) "Messages.obj" "Process.obj" "SVC.obj" "SysTick.obj" "UART.obj" "application.obj" "cqueue.obj" "time.obj" "tm4c1294ncpdt_startup_ccs.obj" 
+	-$(RM) "Messages.d" "Process.d" "SVC.d" "SysTick.d" "UART.d" "application.d" "cqueue.d" "time.d" "tm4c1294ncpdt_startup_ccs.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

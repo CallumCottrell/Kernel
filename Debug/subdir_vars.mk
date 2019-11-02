@@ -9,7 +9,9 @@ CMD_SRCS += \
 ../tm4c1294ncpdt.cmd 
 
 C_SRCS += \
+../Messages.c \
 ../Process.c \
+../SVC.c \
 ../SysTick.c \
 ../UART.c \
 ../application.c \
@@ -18,7 +20,9 @@ C_SRCS += \
 ../tm4c1294ncpdt_startup_ccs.c 
 
 C_DEPS += \
+./Messages.d \
 ./Process.d \
+./SVC.d \
 ./SysTick.d \
 ./UART.d \
 ./application.d \
@@ -27,7 +31,9 @@ C_DEPS += \
 ./tm4c1294ncpdt_startup_ccs.d 
 
 OBJS += \
+./Messages.obj \
 ./Process.obj \
+./SVC.obj \
 ./SysTick.obj \
 ./UART.obj \
 ./application.obj \
@@ -36,7 +42,9 @@ OBJS += \
 ./tm4c1294ncpdt_startup_ccs.obj 
 
 OBJS__QUOTED += \
+"Messages.obj" \
 "Process.obj" \
+"SVC.obj" \
 "SysTick.obj" \
 "UART.obj" \
 "application.obj" \
@@ -45,7 +53,9 @@ OBJS__QUOTED += \
 "tm4c1294ncpdt_startup_ccs.obj" 
 
 C_DEPS__QUOTED += \
+"Messages.d" \
 "Process.d" \
+"SVC.d" \
 "SysTick.d" \
 "UART.d" \
 "application.d" \
@@ -54,7 +64,9 @@ C_DEPS__QUOTED += \
 "tm4c1294ncpdt_startup_ccs.d" 
 
 C_SRCS__QUOTED += \
+"../Messages.c" \
 "../Process.c" \
+"../SVC.c" \
 "../SysTick.c" \
 "../UART.c" \
 "../application.c" \

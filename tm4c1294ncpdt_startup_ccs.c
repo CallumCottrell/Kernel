@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <UART.h>
 #include <SysTick.h>
-#include "kernel/KernelCalls.h"
+#include "KernelCalls.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -47,6 +47,7 @@ extern void _c_int00(void);
 extern void UART0_IntHandler(void);
 extern void SysTickHandler(void);
 extern void SVCall(void);
+extern void pendSVHandler(void);
 //*****************************************************************************
 //
 // Linker variable that marks the top of the stack.
@@ -86,7 +87,7 @@ void (* const g_pfnVectors[])(void) =
     SVCall,                                 // SVCall handler
     IntDefaultHandler,                      // Debug monitor handler
     0,                                      // Reserved
-    IntDefaultHandler,                      // The PendSV handler
+    pendSVHandler,                      // The PendSV handler
     SysTickHandler,                         // The SysTick handler //Going to change this
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B

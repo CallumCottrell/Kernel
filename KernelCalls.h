@@ -13,5 +13,5 @@ unsigned int arg2;
 };
 
 void SVCall(void);
-
+void pendSVHandler();
 #endif /*KERNELCALLS_H_*/

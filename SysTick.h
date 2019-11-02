@@ -18,6 +18,6 @@ extern void SysTickStart(void);
 extern void clock(void);
 
 // For an interrupt every tenth of a second
-#define MAX_WAIT           0x186A00
+#define MAX_WAIT           0x27100
 
 #endif /* SYSTICK_H_ */
