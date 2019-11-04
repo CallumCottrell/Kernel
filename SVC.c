@@ -24,7 +24,7 @@
 //A pcb that is running for each priority level
 struct pcb *running[6]={0,0,0,0,0,0};
 volatile int priorityLevel;
-
+volatile int registersSaved;
 int regProcess();
 void findNextProcess(void);
 void removePCB();
@@ -32,7 +32,7 @@ void nextProcess(void);
 void initKernel();
 void addPCB(struct pcb *new, int priority);
 void terminate();
-
+void contextSwitch();
 void main (void) {
 
    regProcess(hello, 1000, 4);
@@ -49,18 +49,21 @@ void main (void) {
 int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
     //Make a new PCB for this process to have its place in the queues
-    volatile struct pcb *newPCB = malloc(sizeof(struct pcb));
+    struct pcb *newPCB = malloc(sizeof(struct pcb));
+    newPCB->PID = pid;
+    //Add the PCB to its priority queue
+    addPCB(newPCB, priority);
 
     //Allocate 512 bytes for the process' stack
-    unsigned int *stackPointer = (unsigned int *)malloc(1024*sizeof(unsigned char));
+    unsigned int stackPointer = malloc(1024*sizeof(unsigned char));
     newPCB->stackBase = stackPointer;
+    stackPointer = stackPointer + (1024 * sizeof(unsigned char));
+    stackPointer = stackPointer - (16 * sizeof(unsigned int));
 
     //Stack pointer currently points to the base of the stack.
     struct stack_frame *pStack = (struct stack_frame *)stackPointer;
 
-    //Add the PCB to its priority queue
-    addPCB(newPCB, priority);
-    //Set the stack pointer
+    //Set the stack pointer .  V important !
     newPCB->SP = (unsigned int) pStack;
 
     pStack->psr = THUMB_MODE; // Thumb mode
@@ -73,14 +76,18 @@ void k_terminate(){
     //remove PCB
     removePCB();
 
+    struct pcb *temp = running[priorityLevel];
+    running[priorityLevel] = running[priorityLevel]->next;
+
     // free memory
     free((void *)running[priorityLevel]->stackBase);
-    free(running[priorityLevel]);
-    running[priorityLevel]=0;
+    free(temp);
 
     // find next process to run
     findNextProcess();
-    NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
+    registersSaved = 1;
+    set_PSP(running[priorityLevel]->SP);
+  //  contextSwitch();
 
 }
 void removePCB (){
@@ -94,6 +101,8 @@ void removePCB (){
 void initKernel(){
     //Find the process to run first
     findNextProcess();
+
+    registersSaved = 0;
     /* Initialize UART */
      UART0_Init();           // Initialize UART0
      InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
@@ -250,6 +259,7 @@ else /* Subsequent SVCs */
     {
     case TERMINATE:
             k_terminate();
+            break;
 //    break;
     default:
         kcaptr -> rtnvalue = -1;
@@ -261,12 +271,19 @@ else /* Subsequent SVCs */
 
 void pendSVHandler(){
 
-    save_registers();
-    nextProcess();
-    restore_registers();
+  contextSwitch();
 
 }
+void contextSwitch(){
+    if (!registersSaved){
+     save_registers();
+     registersSaved = 0;
+     }
+     nextProcess();
+     restore_registers();
 
+
+}
 void nextProcess() {
     running[priorityLevel] -> SP = get_PSP();
     running[priorityLevel] = running[priorityLevel]->next;
