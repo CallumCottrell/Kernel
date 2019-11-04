@@ -13,22 +13,29 @@
 #include "SysTick.h"
 #include "applications.h"
 
-void assignR7(struct kCallArgs *k);
+void assignR7(unsigned long);
 
 volatile int helloValue = 0;
 
 void hello(){
    helloValue = 5;
    int i = 0;
-   for (i=0;i<5;i++)
+//   for (i=0;i<5;i++)
+//       helloValue++;
+
+   while (1){
        helloValue++;
+   }
 }
 
 void goodbye(){
     helloValue = 20000;
     int i =0;
-    for (i=0;i<5;i++)
-        helloValue++;
+//    for (i=0;i<5;i++)
+//        helloValue++;
+    while(1){
+        helloValue--;
+    }
 }
 
 void lowest() {

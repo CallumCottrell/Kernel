@@ -49,7 +49,7 @@ void main (void) {
 int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
     //Make a new PCB for this process to have its place in the queues
-     struct pcb *newPCB = malloc(sizeof(struct pcb));
+    volatile struct pcb *newPCB = malloc(sizeof(struct pcb));
 
     //Allocate 512 bytes for the process' stack
     unsigned int *stackPointer = (unsigned int *)malloc(1024*sizeof(unsigned char));
@@ -159,8 +159,6 @@ __asm("     PUSH    {LR}");
 /* Trapping source: MSP or PSP? */
 __asm("     TST     LR,#4");    /* Bit #4 indicates MSP (0) or PSP (1) */
 __asm("     BNE     RtnViaPSP");
-__asm(" movw    R7,#0x0041");  /* Lower 16 [and clear top 16] */
-__asm(" movt    R7,#0x0000");
 
 /* Trapping source is MSP - save r4-r11 on stack (default, so just push) */
 __asm("     PUSH    {r4-r11}");
