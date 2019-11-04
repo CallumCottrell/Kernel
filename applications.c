@@ -42,12 +42,13 @@ int i;
 void terminate(){
     struct kCallArgs args;
     args.code = TERMINATE;
+    assignR7((unsigned long) &args);
     SVC();
 
     //Call SVC
     //Change the LR to the PC of the next process??? will it do this automatically?
 }
 
-void assignR7(struct kCallArgs *k){
-
+void assignR7(unsigned long pointer){
+    __asm(" mov r7, r0");
 }
