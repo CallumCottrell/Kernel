@@ -14,29 +14,30 @@
 #include <stdlib.h>
 #include "UART.h"
 #include "SysTick.h"
+#include "applications.h"
 
+#define TRIGGER_PENDSV 0x10000000
+#define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
 #define NVIC_SYS_PRI3_R (*((volatile unsigned long*)0xE000ED20))
 #define PENDSV_LOWEST_PRIORITY 0X00E00000
 #define THUMB_MODE 0x01000000
 //A pcb that is running for each priority level
-struct pcb *running[5];
-int priorityLevel;
+struct pcb *running[6]={0,0,0,0,0,0};
+volatile int priorityLevel;
 
-//Function prototypes
-void hello();
-void goodbye();
 int regProcess();
-void findNextProcess();
+void findNextProcess(void);
+void removePCB();
+void nextProcess(void);
 void initKernel();
 void addPCB(struct pcb *new, int priority);
 void terminate();
-
-int helloValue = 0;
 
 void main (void) {
 
    regProcess(hello, 1000, 4);
    regProcess(goodbye, 1001, 4);
+   regProcess(lowest, 10, 0);
    initKernel();
    SVC();
 
@@ -47,12 +48,16 @@ void main (void) {
 //Register a process that may be used. Only called at the initialization stage, for each process.
 int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
+    //Make a new PCB for this process to have its place in the queues
+     struct pcb *newPCB = malloc(sizeof(struct pcb));
+
     //Allocate 512 bytes for the process' stack
     unsigned int *stackPointer = (unsigned int *)malloc(1024*sizeof(unsigned char));
+    newPCB->stackBase = stackPointer;
+
     //Stack pointer currently points to the base of the stack.
     struct stack_frame *pStack = (struct stack_frame *)stackPointer;
-    //Make a new PCB for this process to have its place in the queues
-    struct pcb *newPCB = malloc(sizeof(struct pcb));
+
     //Add the PCB to its priority queue
     addPCB(newPCB, priority);
     //Set the stack pointer
@@ -64,26 +69,31 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     return 1;
 }
 
+void k_terminate(){
+    //remove PCB
+    removePCB();
 
-void hello(){
-   helloValue = 5;
+    // free memory
+    free((void *)running[priorityLevel]->stackBase);
+    free(running[priorityLevel]);
+    running[priorityLevel]=0;
+
+    // find next process to run
+    findNextProcess();
+    NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
+
 }
+void removePCB (){
+    //unlink from list
+    running[priorityLevel]->prev->next = running[priorityLevel]->next;
+    running[priorityLevel]->next->prev = running[priorityLevel]->prev;
 
-void goodbye(){
-    helloValue = 20000;
 }
-
-void terminate(){
-   helloValue = 10;
-}
-
 
 //Set the priority level to lowest by default and pcb pointers to null.
 void initKernel(){
-    int i;
     //Find the process to run first
     findNextProcess();
-    volatile int check;
     /* Initialize UART */
      UART0_Init();           // Initialize UART0
      InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
@@ -119,8 +129,8 @@ void addPCB(struct pcb *new, int priority){
 
 void findNextProcess() {
     int i;
-     for ( i=0; i< 5; i++){
-         if (running[i] !=0)
+     for ( i=0; i< 6; i++){
+         if (running[i])
              priorityLevel=i;
      }
 }
@@ -132,7 +142,6 @@ void addProcess(int pid, int priority){
 int getPID();
 
 void nice();
-
 
 void SVCall(void)
 {
@@ -193,7 +202,7 @@ void SVCHandler(struct stack_frame *argptr)
    Handler mode and uses the MSP
  */
 static int firstSVCcall = TRUE;
-struct kcallargs *kcaptr;
+struct kCallArgs *kcaptr;
 
 if (firstSVCcall)
 {
@@ -238,11 +247,11 @@ else /* Subsequent SVCs */
  */
 
 
-    kcaptr = (struct kcallargs *) argptr -> r7;
+    kcaptr = (struct kCallArgs *) argptr -> r7;
     switch(kcaptr -> code)
     {
-//    case KERNEL_FUNCTION_XXX:
-//        kcaptr -> rtnvalue = do_function_xxx();
+    case TERMINATE:
+            k_terminate();
 //    break;
     default:
         kcaptr -> rtnvalue = -1;

@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include "process.h"
 
+void set_LR(volatile unsigned long LinkRegister)
+{
+/* set PSP to ProcessStack */
+__asm(" mov lr, r0");
+}
+
 unsigned long get_PSP(void)
 {
 /* Returns contents of PSP (current process stack */

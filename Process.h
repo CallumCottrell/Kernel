@@ -64,6 +64,7 @@ struct pcb
 /* Stack pointer - r13 (PSP) */
 unsigned int SP;
 unsigned int PID;
+unsigned int stackBase;
 /* Links to adjacent PCBs */
 struct pcb *next;
 struct pcb *prev;

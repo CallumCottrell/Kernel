@@ -9,6 +9,7 @@ SVC.obj: ../KernelCalls.h
 SVC.obj: C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdlib.h
 SVC.obj: ../UART.h
 SVC.obj: ../SysTick.h
+SVC.obj: ../applications.h
 
 ../SVC.c: 
 C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdio.h: 
@@ -19,3 +20,4 @@ C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdarg.h:
 C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdlib.h: 
 ../UART.h: 
 ../SysTick.h: 
+../applications.h: 
