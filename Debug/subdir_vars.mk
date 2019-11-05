@@ -17,6 +17,7 @@ C_SRCS += \
 ../application.c \
 ../applications.c \
 ../cqueue.c \
+../functions.c \
 ../time.c \
 ../tm4c1294ncpdt_startup_ccs.c 
 
@@ -29,6 +30,7 @@ C_DEPS += \
 ./application.d \
 ./applications.d \
 ./cqueue.d \
+./functions.d \
 ./time.d \
 ./tm4c1294ncpdt_startup_ccs.d 
 
@@ -41,6 +43,7 @@ OBJS += \
 ./application.obj \
 ./applications.obj \
 ./cqueue.obj \
+./functions.obj \
 ./time.obj \
 ./tm4c1294ncpdt_startup_ccs.obj 
 
@@ -53,6 +56,7 @@ OBJS__QUOTED += \
 "application.obj" \
 "applications.obj" \
 "cqueue.obj" \
+"functions.obj" \
 "time.obj" \
 "tm4c1294ncpdt_startup_ccs.obj" 
 
@@ -65,6 +69,7 @@ C_DEPS__QUOTED += \
 "application.d" \
 "applications.d" \
 "cqueue.d" \
+"functions.d" \
 "time.d" \
 "tm4c1294ncpdt_startup_ccs.d" 
 
@@ -77,6 +82,7 @@ C_SRCS__QUOTED += \
 "../application.c" \
 "../applications.c" \
 "../cqueue.c" \
+"../functions.c" \
 "../time.c" \
 "../tm4c1294ncpdt_startup_ccs.c" 
 

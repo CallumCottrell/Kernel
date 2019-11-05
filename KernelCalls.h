@@ -1,7 +1,7 @@
 #ifndef KERNELCALLS_H_
 #define KERNELCALLS_H_
 
-enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE};
+enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE, BIND};
 
 //Kernel Call arguments.
 struct kCallArgs
@@ -14,4 +14,5 @@ unsigned int arg2;
 
 void SVCall(void);
 extern void pendSVHandler();
+
 #endif /*KERNELCALLS_H_*/

@@ -15,24 +15,23 @@
 #include "UART.h"
 #include "SysTick.h"
 #include "applications.h"
+#include "functions.h"
 
 #define TRIGGER_PENDSV 0x10000000
-#define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
+#define NVIC_INT_CTRL_R (*((volatile unsigned long *)0xE000ED04))
 #define NVIC_SYS_PRI3_R (*((volatile unsigned long*)0xE000ED20))
 #define PENDSV_LOWEST_PRIORITY 0X00E00000
 #define THUMB_MODE 0x01000000
+
 //A pcb that is running for each priority level
-struct pcb *running[6]={0,0,0,0,0,0};
+struct pcb *running[5]={0,0,0,0,0};
 volatile int priorityLevel;
 volatile int registersSaved;
+struct mailbox mboxList[100];
+
 int regProcess();
-void findNextProcess(void);
-void removePCB();
-void nextProcess(void);
 void initKernel();
-void addPCB(struct pcb *new, int priority);
-void terminate();
-void contextSwitch();
+
 void main (void) {
 
    regProcess(hello, 1000, 4);
@@ -43,6 +42,38 @@ void main (void) {
 
 }
 
+//Set the priority level to lowest by default and pcb pointers to null.
+void initKernel(){
+    //Find the process to run first
+    findNextProcess();
+
+    registersSaved = 0;
+    /* Initialize UART */
+    UART0_Init();           // Initialize UART0
+    InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
+    UART0_IntEnable(UART_INT_RX | UART_INT_TX); // Enable Receive and Transmit interrupts
+    InterruptMasterEnable();      // Enable Master (CPU) Interrupts
+    /* Initialize Systick */
+    SysTickPeriod(MAX_WAIT);
+    SysTickIntEnable();
+    SysTickStart();
+
+    //Set pendsv to lowest priority
+    NVIC_SYS_PRI3_R |= PENDSV_LOWEST_PRIORITY;
+
+}
+
+
+void pendSVHandler(){
+
+    if (!registersSaved){
+     save_registers();
+     registersSaved = 0;
+     }
+     nextProcess();
+     restore_registers();
+
+}
 
 //Trying to pass readTime() to this
 //Register a process that may be used. Only called at the initialization stage, for each process.
@@ -72,85 +103,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     return 1;
 }
 
-void k_terminate(){
-    //remove PCB
-    removePCB();
 
-    struct pcb *temp = running[priorityLevel];
-    running[priorityLevel] = running[priorityLevel]->next;
-
-    // free memory
-    free((void *)running[priorityLevel]->stackBase);
-    free(temp);
-
-    // find next process to run
-    findNextProcess();
-    registersSaved = 1;
-    set_PSP(running[priorityLevel]->SP);
-  //  contextSwitch();
-
-}
-void removePCB (){
-    //unlink from list
-    running[priorityLevel]->prev->next = running[priorityLevel]->next;
-    running[priorityLevel]->next->prev = running[priorityLevel]->prev;
-
-}
-
-//Set the priority level to lowest by default and pcb pointers to null.
-void initKernel(){
-    //Find the process to run first
-    findNextProcess();
-
-    registersSaved = 0;
-    /* Initialize UART */
-     UART0_Init();           // Initialize UART0
-     InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
-     UART0_IntEnable(UART_INT_RX | UART_INT_TX); // Enable Receive and Transmit interrupts
-     InterruptMasterEnable();      // Enable Master (CPU) Interrupts
-     /* Initialize Systick */
-     SysTickPeriod(MAX_WAIT);
-     SysTickIntEnable();
-     SysTickStart();
-
-     //Set pendsv to lowest priority
-     NVIC_SYS_PRI3_R |= PENDSV_LOWEST_PRIORITY;
-
-}
-
-// Add a pcb to its priority queue
-void addPCB(struct pcb *new, int priority){
-
-    //If the priority queue is empty
-    if (!running[priority]){
-        new -> next = new;
-        new -> prev = new;
-        running[priority]= new;
-    }
-    //Queue not empty, add in the new PCB
-    else {
-    new->next = running[priority]->next;
-    running[priority]->next = new;
-    new->prev = running[priority];
-    running[priority] = new;
-    }
-}
-
-void findNextProcess() {
-    int i;
-     for ( i=0; i< 6; i++){
-         if (running[i])
-             priorityLevel=i;
-     }
-}
-
-void addProcess(int pid, int priority){
-
-}
-
-int getPID();
-
-void nice();
 
 void SVCall(void)
 {
@@ -255,37 +208,22 @@ else /* Subsequent SVCs */
 
 
     kcaptr = (struct kCallArgs *) argptr -> r7;
-    switch(kcaptr -> code)
-    {
+    switch(kcaptr -> code){
+
     case TERMINATE:
             k_terminate();
             break;
-//    break;
+
+    case GETID:
+           kcaptr->rtnvalue = k_getPID();
+
+    case BIND:
+           kcaptr->rtnvalue = k_bind(kcaptr->arg1);
+
     default:
         kcaptr -> rtnvalue = -1;
     }
 
 }
 
-}
-
-void pendSVHandler(){
-
-  contextSwitch();
-
-}
-void contextSwitch(){
-    if (!registersSaved){
-     save_registers();
-     registersSaved = 0;
-     }
-     nextProcess();
-     restore_registers();
-
-
-}
-void nextProcess() {
-    running[priorityLevel] -> SP = get_PSP();
-    running[priorityLevel] = running[priorityLevel]->next;
-    set_PSP(running[priorityLevel]->SP);
 }

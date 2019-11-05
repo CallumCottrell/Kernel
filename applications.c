@@ -53,22 +53,30 @@ void goodbye(){
   //  SVC();
 }
 
+int pkCall(unsigned int code, unsigned int arg1){
+    struct kCallArgs kArgs;
+    kArgs.code = code;
+    kArgs.arg1 = arg1;
+    assignR7((volatile unsigned long) &kArgs);
+    SVC();
+    return kArgs.rtnvalue;
+}
+
+//The process that always runs
 void lowest() {
 int i;
-    for (i=0;i<10000000;i++){
+    for (i=0;i<1000000;i++){
         helloValue++;
     }
 
 }
 
+//Function that LR points to for all processes
 void terminate(){
-    struct kCallArgs args;
-    args.code = TERMINATE;
-    assignR7((volatile unsigned long) &args);
+    struct kCallArgs kArgs;
+    kArgs.code = TERMINATE;
+    assignR7((volatile unsigned long) &kArgs);
     SVC();
-
-    //Call SVC
-    //Change the LR to the PC of the next process??? will it do this automatically?
 }
 
 void assignR7(volatile unsigned long pointer){
