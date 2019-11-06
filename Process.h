@@ -65,6 +65,8 @@ struct pcb
 unsigned int SP;
 unsigned int PID;
 unsigned int stackBase;
+unsigned int priority;
+
 /* Links to adjacent PCBs */
 struct pcb *next;
 struct pcb *prev;

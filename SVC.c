@@ -28,6 +28,7 @@ struct pcb *running[5]={0,0,0,0,0};
 volatile int priorityLevel;
 volatile int registersSaved;
 struct mailbox mboxList[100];
+struct pcb *blocked;
 
 int regProcess();
 void initKernel();
@@ -82,6 +83,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     //Make a new PCB for this process to have its place in the queues
     struct pcb *newPCB = malloc(sizeof(struct pcb));
     newPCB->PID = pid;
+    newPCB->priority = priority;
     //Add the PCB to its priority queue
     addPCB(newPCB, priority);
 

@@ -14,4 +14,5 @@ extern void goodbye();
 extern void lowest();
 extern void terminate();
 
+
 #endif /* APPLICATIONS_H_ */

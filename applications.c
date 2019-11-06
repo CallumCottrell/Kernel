@@ -17,15 +17,26 @@ void assignR7(unsigned long);
 
 volatile int helloValue = 0;
 
+int send(unsigned int dest, unsigned int src, void *msg, unsigned int size);
+int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size);
+int bind(unsigned int mboxNum);
+
+int pkCall(unsigned int code, void *arg);
+
+
 void hello(){
    helloValue = 5;
-   int i = 0;
+
 //   for (i=0;i<5;i++)
 //       helloValue++;
+   //Bind to mailbox 4
+   bind(4);
+   int senderID;
+   struct message *msg;
 
-   while (1){
-       helloValue++;
-   }
+   recv(4, &senderID, msg, 10);
+
+
 }
 
 void check(){
@@ -45,21 +56,12 @@ void goodbye(){
     helloValue = 20000;
     int i =0;
     volatile int callum = 9;
-    for (i=0;i<5;i++)
-        helloValue++;
-//    while(1){
-//        helloValue--;
-//    }
+//    for (i=0;i<5;i++)
+//        helloValue++;
+    while(1){
+        helloValue--;
+    }
   //  SVC();
-}
-
-int pkCall(unsigned int code, unsigned int arg1){
-    struct kCallArgs kArgs;
-    kArgs.code = code;
-    kArgs.arg1 = arg1;
-    assignR7((volatile unsigned long) &kArgs);
-    SVC();
-    return kArgs.rtnvalue;
 }
 
 //The process that always runs
@@ -81,4 +83,39 @@ void terminate(){
 
 void assignR7(volatile unsigned long pointer){
     __asm(" mov r7, r0");
+}
+
+int pkCall(unsigned int code, void *arg){
+
+    struct kCallArgs kArgs;
+    kArgs.code = code;
+    kArgs.arg1 = (unsigned int)arg;
+
+    assignR7((volatile unsigned long) &kArgs);
+    SVC();
+    return kArgs.rtnvalue;
+
+}
+
+int send(unsigned int dest, unsigned int src, void *msg, unsigned int size){
+
+
+
+}
+
+//Try to receive from the mailbox at index destination, from the source mailbox (will be returned), the message stored in msg, and size
+int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size){
+
+
+    struct messageStruct pmsg;
+    pmsg.destMb = dest;
+    pmsg.srcMb = src;
+    pmsg.msg = msg;
+    pmsg.size = size;
+    return pkCall(RECV, &pmsg);
+
+}
+
+int bind(unsigned int mboxNum){
+    return pkCall(BIND, mboxNum);
 }

@@ -14,7 +14,11 @@ int k_getPID();
 
 void k_nice();
 
-int k_bind(unsigned int);
+int k_bind(unsigned int boxNum);
+
+int k_recv(unsigned int recvNum, void *msg, unsigned int size);
+
+int k_send();
 
 void nextProcess();
 

@@ -16,19 +16,28 @@ extern int registersSaved;
 extern struct mailbox mboxList[100];
 
 void k_terminate(){
-    //remove PCB
+
+    //unlink the PCB from the running queue
     removePCB();
 
+    //Is running bound to any mailboxes
+
+
+    //Store the running PCB for freeing after next PCB found
     struct pcb *temp = running[priorityLevel];
+    //Go to next - no way back to removed PCB from next
     running[priorityLevel] = running[priorityLevel]->next;
 
-    // free memory
+    // free stack from originally malloced base
     free((void *)running[priorityLevel]->stackBase);
+
+    // free the pointer
     free(temp);
 
-    // find next process to run
+    // find next process to run - if it priority level does not change, next process begins naturally
     findNextProcess();
-    registersSaved = 1;
+
+    // set the PSP to the new process' sp
     set_PSP(running[priorityLevel]->SP);
 
 }
@@ -44,29 +53,41 @@ void k_nice(){
 }
 
 int k_bind(unsigned int boxNumber){
-    static struct mboxStatic = mboxList[0];
-    static int freebox;
+
     if (boxNumber > 100){
         return -3;
     }
     else if (!boxNumber){
-        mboxStatic.
+       //find a free mailbox
     }
     else {
         //access mboxList at boxNumber to see if its in use
-        if (mboxList[boxNumber]->process){
+        if (mboxList[boxNumber].process){
             //fail
             return -1;
         }
         else {
-            mboxList[boxNumber]->process = running[priorityLevel];
-
+            mboxList[boxNumber].process = running[priorityLevel];
+            return boxNumber;
         }
 
     }
 }
 
+int k_send(){
 
+}
+
+//Kernel receive function
+int k_recv(unsigned int recvNum, void *msg, unsigned int size){
+
+
+    //Check if there is a message waiting. block if not
+    if (mboxList[recvNum].msg != 0){
+        //Copy the bytes
+        msg = mboxList[recvNum].msg;
+    }
+}
 
 void nextProcess() {
     running[priorityLevel] -> SP = get_PSP();
