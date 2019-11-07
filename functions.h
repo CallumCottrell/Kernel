@@ -18,7 +18,7 @@ int k_bind(unsigned int boxNum);
 
 int k_recv(unsigned int recvNum, void *msg, unsigned int size);
 
-int k_send();
+int k_send(unsigned int recvNum, void *msg, unsigned int size);
 
 void nextProcess();
 

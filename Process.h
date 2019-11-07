@@ -74,14 +74,17 @@ struct pcb *prev;
 
 // Interprocess Communication
 struct message{
-    char data;
+    int sender;
+    char *data;
     struct message *next;
+    struct message *prev;
 };
 
 struct mailbox {
     struct pcb *process;
     struct message *msg;
     char busy;
+    int blocked;
 };
 
 #endif /*PROCESS_H_*/

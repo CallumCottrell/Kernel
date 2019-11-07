@@ -20,7 +20,7 @@ void k_terminate(){
     //unlink the PCB from the running queue
     removePCB();
 
-    //Is running bound to any mailboxes
+    //Is running bound to any mailboxes? free mailboxe
 
 
     //Store the running PCB for freeing after next PCB found
@@ -74,7 +74,38 @@ int k_bind(unsigned int boxNumber){
     }
 }
 
-int k_send(){
+int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int size){
+
+    //Make sure that the sender owns the mailbox
+    if (running[priorityLevel] == mboxList[srcNum].process){
+
+       //If the process isnt blocked
+       if (!mboxList[recvNum].blocked){
+           //Allocate memory for the message coming in
+           void *in = malloc(size);
+           // Copy the contents of the message into the newly allocated memory
+           memcpy(in,msg,size);
+           //Make a new message struct for the linked list
+           struct message *newMsg = malloc(sizeof(struct message));
+           //Store the message
+           newMsg->data = (char *)in;
+           newMsg->sender = srcNum;
+           //Append that message to linked list of messages at the sending mailbox
+           addMsg(newMsg,recvNum);
+
+           }
+       //The process is blocked and waiting for this message
+        else {
+            //Give the message directly to the receiver
+           memcpy(mboxList[recvNum].msg,msg,size);
+
+       }
+
+    }
+    //This mailbox does not belong to the running process!
+    else {
+
+    }
 
 }
 
@@ -82,10 +113,16 @@ int k_send(){
 int k_recv(unsigned int recvNum, void *msg, unsigned int size){
 
 
-    //Check if there is a message waiting. block if not
-    if (mboxList[recvNum].msg != 0){
-        //Copy the bytes
-        msg = mboxList[recvNum].msg;
+    //Make sure that the calling process is the owner of the mailbox
+    if (mboxList[recvNum].process == running[priorityLevel]){
+        //If there is already a message in the mailbox
+        while (mboxList[recvNum].msg){
+
+            if (mboxList[recvNum].msg->sender == &send);
+            memcpy(msg,mboxList[recvNum].msg);
+
+        }
+
     }
 }
 
@@ -121,6 +158,25 @@ void addPCB(struct pcb *new, int priority){
     running[priority] = new;
     }
 }
+
+void addMsg(struct message *newMsg, unsigned int recvNum){
+
+    //If the mailbox message is empty
+    if (!mboxList[recvNum].msg){
+        newMsg -> next = newMsg;
+        newMsg -> prev = newMsg;
+        mboxList[recvNum].msg= newMsg;
+    }
+    //Queue not empty, add in the new PCB
+    else {
+    newMsg->next = mboxList[recvNum].msg->next;
+    mboxList[recvNum].msg->next = newMsg;
+    newMsg->prev = mboxList[recvNum].msg;
+    mboxList[recvNum].msg = new;
+    }
+}
+
+
 
 void findNextProcess() {
     int i;

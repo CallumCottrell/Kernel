@@ -218,9 +218,14 @@ else /* Subsequent SVCs */
 
     case GETID:
            kcaptr->rtnvalue = k_getPID();
-
+           break;
     case BIND:
            kcaptr->rtnvalue = k_bind(kcaptr->arg1);
+           break;
+
+    case SEND:
+           struct messageStruct *m = kcaptr->arg1;
+           kcaptr->rtnvalue = k_send(m->destMb, m->srcMb, m->msg, m->size);
 
     default:
         kcaptr -> rtnvalue = -1;
