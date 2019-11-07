@@ -66,7 +66,7 @@ unsigned int SP;
 unsigned int PID;
 unsigned int stackBase;
 unsigned int priority;
-
+int blocked;
 /* Links to adjacent PCBs */
 struct pcb *next;
 struct pcb *prev;
@@ -76,6 +76,7 @@ struct pcb *prev;
 struct message{
     int sender;
     char *data;
+    int size;
     struct message *next;
     struct message *prev;
 };

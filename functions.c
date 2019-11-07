@@ -76,26 +76,31 @@ int k_bind(unsigned int boxNumber){
 
 int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int size){
 
+    unsigned psize;
+    void *msgPtr;
+
     //Make sure that the sender owns the mailbox
     if (running[priorityLevel] == mboxList[srcNum].process){
 
        //If the process isnt blocked
-       if (!mboxList[recvNum].blocked){
+       if (!mboxList[recvNum].process->blocked){
            //Allocate memory for the message coming in
-           void *in = malloc(size);
+           msgPtr = malloc(size);
            // Copy the contents of the message into the newly allocated memory
-           memcpy(in,msg,size);
+           memcpy(msgPtr,msg,size);
            //Make a new message struct for the linked list
            struct message *newMsg = malloc(sizeof(struct message));
            //Store the message
-           newMsg->data = (char *)in;
+           newMsg->data = (char *)msgPtr;
            newMsg->sender = srcNum;
-           //Append that message to linked list of messages at the sending mailbox
+
+           //Append that message to linked list of messages at the receiving mailbox
            addMsg(newMsg,recvNum);
 
            }
        //The process is blocked and waiting for this message
         else {
+           if (size < mboxList[recvNum].msg->)
             //Give the message directly to the receiver
            memcpy(mboxList[recvNum].msg,msg,size);
 
@@ -112,18 +117,27 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 //Kernel receive function
 int k_recv(unsigned int recvNum, void *msg, unsigned int size){
 
+    unsigned int psize;
 
     //Make sure that the calling process is the owner of the mailbox
     if (mboxList[recvNum].process == running[priorityLevel]){
-        //If there is already a message in the mailbox
-        while (mboxList[recvNum].msg){
 
-            if (mboxList[recvNum].msg->sender == &send);
-            memcpy(msg,mboxList[recvNum].msg);
+        //Is there anything to receive?
+        if (mboxList[recvNum].msg != 0){
+            if (mboxList[recvNum].msg->size > size)
+                psize = size;
+            else
+                psize = mboxList[recvNum].msg->size;
 
+            //Copy the message stored in the mailbox
+            memcpy(msg, mboxList[recvNum].msg, psize);
+            // unlink mboxLise[recvNum].msg
+            // free the message
+            return psize;
+        }
         }
 
-    }
+
 }
 
 void nextProcess() {
@@ -172,7 +186,7 @@ void addMsg(struct message *newMsg, unsigned int recvNum){
     newMsg->next = mboxList[recvNum].msg->next;
     mboxList[recvNum].msg->next = newMsg;
     newMsg->prev = mboxList[recvNum].msg;
-    mboxList[recvNum].msg = new;
+    mboxList[recvNum].msg = newMsg;
     }
 }
 

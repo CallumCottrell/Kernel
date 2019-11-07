@@ -224,9 +224,12 @@ else /* Subsequent SVCs */
            break;
 
     case SEND:
-           struct messageStruct *m = kcaptr->arg1;
+    {
+           struct messageStruct *m;
+           m = (struct messageStruct*)kcaptr->arg1;
            kcaptr->rtnvalue = k_send(m->destMb, m->srcMb, m->msg, m->size);
-
+           break;
+    }
     default:
         kcaptr -> rtnvalue = -1;
     }
