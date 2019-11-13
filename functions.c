@@ -79,13 +79,14 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
     unsigned psize;
     void *msgPtr;
 
-    //Make sure that the sender owns the mailbox
-    if (running[priorityLevel] == mboxList[srcNum].process){
+    //Make sure that the sender owns the mailbox and other mailbox exists
+    if (running[priorityLevel] == mboxList[srcNum].process && mboxList[recvNum].process){
 
        //If the process isnt blocked
        if (!mboxList[recvNum].process->blocked){
+           psize = size;
            //Allocate memory for the message coming in
-           msgPtr = malloc(size);
+           msgPtr = malloc(psize);
            // Copy the contents of the message into the newly allocated memory
            memcpy(msgPtr,msg,size);
            //Make a new message struct for the linked list
@@ -100,18 +101,23 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
            }
        //The process is blocked and waiting for this message
         else {
-           if (size < mboxList[recvNum].msg->)
+           if (size > sizeof(mboxList[recvNum].msg)){
             //Give the message directly to the receiver
-           memcpy(mboxList[recvNum].msg,msg,size);
-
+               psize = sizeof(mboxList[recvNum].msg);
+           }
+           else {
+               psize = size;
+           }
+           memcpy(mboxList[recvNum].msg->data,msg,psize);
        }
 
     }
     //This mailbox does not belong to the running process!
     else {
-
+        return -1;
     }
 
+    return psize;
 }
 
 //Kernel receive function
@@ -130,10 +136,15 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
                 psize = mboxList[recvNum].msg->size;
 
             //Copy the message stored in the mailbox
-            memcpy(msg, mboxList[recvNum].msg, psize);
+            memcpy(msg, mboxList[recvNum].msg->data, psize);
             // unlink mboxLise[recvNum].msg
             // free the message
             return psize;
+        }
+        // Nothing to receive. Block!
+        else {
+            struct message *recMsg = malloc(sizeof(struct message));
+
         }
         }
 
