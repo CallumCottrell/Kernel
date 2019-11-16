@@ -24,7 +24,7 @@
 #define THUMB_MODE 0x01000000
 
 //A pcb that is running for each priority level
-struct pcb *running[5]={0,0,0,0,0};
+struct pcb *running[6]={0,0,0,0,0,0};
 volatile int priorityLevel;
 volatile int registersSaved;
 struct mailbox mboxList[100];
@@ -36,8 +36,8 @@ void initKernel();
 
 void main (void) {
 
-   regProcess(hello, 1000, 4);
-   regProcess(goodbye, 1001, 4);
+   regProcess(UARTReceive, 1000, 5);
+   regProcess(goodbye, 1001, 5);
    regProcess(lowest, 10, 0);
    initKernel();
    SVC();
@@ -62,6 +62,8 @@ void initKernel(){
 
     //Set pendsv to lowest priority
     NVIC_SYS_PRI3_R |= PENDSV_LOWEST_PRIORITY;
+
+    //Setup the list of messages
     int i;
     msgList = malloc(sizeof(struct message));
     struct message *top = msgList;
@@ -79,9 +81,9 @@ void initKernel(){
 
 void pendSVHandler(){
 
-    if (!registersSaved){
+    if (!running[priorityLevel]->regSaved){
      save_registers();
-     registersSaved = 0;
+     running[priorityLevel]->regSaved = 0;
      }
      nextProcess();
      restore_registers();
@@ -96,6 +98,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     struct pcb *newPCB = malloc(sizeof(struct pcb));
     newPCB->PID = pid;
     newPCB->priority = priority;
+    newPCB->regSaved = 0;
     //Add the PCB to its priority queue
     addPCB(newPCB, priority);
 

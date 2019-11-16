@@ -13,7 +13,7 @@
 #define TRIGGER_PENDSV 0x10000000
 #define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
 
-extern struct pcb *running[5];
+extern struct pcb *running[6];
 extern volatile int priorityLevel;
 extern int registersSaved;
 extern struct mailbox mboxList[100];
@@ -91,7 +91,7 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
     void *msgPtr;
 
     //Make sure that the sender owns the mailbox and other mailbox exists
-    if (running[priorityLevel] == mboxList[srcNum].process && mboxList[recvNum].process){
+    if (running[priorityLevel] == mboxList[srcNum].process && mboxList[recvNum].process!=0){
 
        //If the process isnt blocked
        if (!mboxList[recvNum].process->blocked){
@@ -123,7 +123,8 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
-           registersSaved= 1;
+           mboxList[recvNum].process->regSaved = 1;
+           findNextProcess();
            NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
        }
 
@@ -163,7 +164,7 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
             struct message *newMsg = allocate();
             newMsg->size = size;
             newMsg->next = 0;
-
+            newMsg->data = malloc(size);
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
 
@@ -241,7 +242,7 @@ struct message* allocate(){
 
 void findNextProcess() {
     int i;
-     for ( i=0; i< 5; i++){
+     for ( i=0; i<=5; i++){
          if (running[i])
              priorityLevel=i;
      }

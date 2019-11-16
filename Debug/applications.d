@@ -10,6 +10,8 @@ applications.obj: C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdli
 applications.obj: ../UART.h
 applications.obj: ../SysTick.h
 applications.obj: ../applications.h
+applications.obj: ../cqueue.h
+applications.obj: ../time.h
 
 ../applications.c: 
 C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdio.h: 
@@ -21,3 +23,5 @@ C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdlib.h:
 ../UART.h: 
 ../SysTick.h: 
 ../applications.h: 
+../cqueue.h: 
+../time.h: 

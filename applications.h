@@ -13,6 +13,6 @@ extern void hello();
 extern void goodbye();
 extern void lowest();
 extern void terminate();
-
+extern void UARTReceive();
 
 #endif /* APPLICATIONS_H_ */

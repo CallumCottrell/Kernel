@@ -66,6 +66,7 @@ unsigned int SP;
 unsigned int PID;
 unsigned int stackBase;
 unsigned int priority;
+int regSaved;
 int blocked;
 /* Links to adjacent PCBs */
 struct pcb *next;
