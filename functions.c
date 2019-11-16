@@ -10,27 +10,37 @@
 #include <stdio.h>
 #include "functions.h"
 
+#define TRIGGER_PENDSV 0x10000000
+#define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
+
 extern struct pcb *running[5];
 extern volatile int priorityLevel;
 extern int registersSaved;
 extern struct mailbox mboxList[100];
 extern struct message *msgList;
 
+void removePCB();
+
 void k_terminate(){
 
     //unlink the PCB from the running queue
     removePCB();
 
-    //Is running bound to any mailboxes? free mailboxe
+    //Is running bound to any mailboxes? free mailboxes
 
 
     //Store the running PCB for freeing after next PCB found
     struct pcb *temp = running[priorityLevel];
     //Go to next - no way back to removed PCB from next
-    running[priorityLevel] = running[priorityLevel]->next;
+    if (running[priorityLevel] == running[priorityLevel]->next){
+        //linked list is empty at this priority level.
+        running[priorityLevel] = 0;
+    }
+    else
+        running[priorityLevel] = running[priorityLevel]->next;
 
     // free stack from originally malloced base
-    free((void *)running[priorityLevel]->stackBase);
+    free((void *)temp->stackBase);
 
     // free the pointer
     free(temp);
@@ -64,7 +74,7 @@ int k_bind(unsigned int boxNumber){
     else {
         //access mboxList at boxNumber to see if its in use
         if (mboxList[boxNumber].process){
-            //fail
+            //fail - is in use
             return -1;
         }
         else {
@@ -112,7 +122,9 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
            mboxList[recvNum].msg->sender = srcNum;
 
            //unblock the process that was trying to receive.
-
+           addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
+           registersSaved= 1;
+           NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
        }
 
     }
@@ -148,12 +160,29 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
         // Nothing to receive. Block!
         else {
             //Allocate space for the anticipated message
-            struct message newMsg = allocate();
+            struct message *newMsg = allocate();
             newMsg->size = size;
             newMsg->next = 0;
 
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
+
+            //Take the process out of the running queue
+            removePCB();
+
+            //check if this is the last item in the linked list
+            if (running[priorityLevel] == running[priorityLevel]->next)
+            running[priorityLevel] = 0;
+            else
+            running[priorityLevel] = running[priorityLevel]->next;
+
+            //Find the new priority level for accessing next process
+            findNextProcess();
+
+            //The registers are saved from the SVC call in recv
+            set_PSP(running[priorityLevel]->SP);
+           // registersSaved = 1;
+
 
         }
         }
@@ -187,7 +216,10 @@ void addPCB(struct pcb *new, int priority){
     }
     //Queue not empty, add in the new PCB
     else {
+    struct pcb *last = running[priority]->prev;
+
     new->next = running[priority]->next;
+    new->next->prev = new;
     running[priority]->next = new;
     new->prev = running[priority];
     running[priority] = new;

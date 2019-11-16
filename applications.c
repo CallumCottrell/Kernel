@@ -32,7 +32,7 @@ void hello(){
    //Bind to mailbox 4
    bind(4);
    int senderID;
-   struct message *msg;
+   void *msg;
 
    recv(4, &senderID, msg, 10);
 

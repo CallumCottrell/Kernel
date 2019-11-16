@@ -66,7 +66,7 @@ void initKernel(){
     msgList = malloc(sizeof(struct message));
     struct message *top = msgList;
     //create the messages
-    for (i=0;i<64;i++){
+    for (i=0;i<32;i++){
         msgList->next = malloc(sizeof(struct message));
         msgList = msgList->next;
     }
@@ -241,6 +241,12 @@ else /* Subsequent SVCs */
            m = (struct messageStruct*)kcaptr->arg1;
            kcaptr->rtnvalue = k_send(m->destMb, m->srcMb, m->msg, m->size);
            break;
+    }
+    case RECV:{
+        struct messageStruct *m;
+                 m = (struct messageStruct*)kcaptr->arg1;
+                 kcaptr->rtnvalue = k_recv(m->destMb, m->msg, m->size);
+                 break;
     }
     default:
         kcaptr -> rtnvalue = -1;
