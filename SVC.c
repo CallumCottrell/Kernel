@@ -28,6 +28,7 @@ struct pcb *running[5]={0,0,0,0,0};
 volatile int priorityLevel;
 volatile int registersSaved;
 struct mailbox mboxList[100];
+struct message *msgList;
 struct pcb *blocked;
 
 int regProcess();
@@ -61,7 +62,18 @@ void initKernel(){
 
     //Set pendsv to lowest priority
     NVIC_SYS_PRI3_R |= PENDSV_LOWEST_PRIORITY;
-
+    int i;
+    msgList = malloc(sizeof(struct message));
+    struct message *top = msgList;
+    //create the messages
+    for (i=0;i<64;i++){
+        msgList->next = malloc(sizeof(struct message));
+        msgList = msgList->next;
+    }
+    //terminate with a null
+    msgList->next = 0;
+    //point to the top of the message list
+    msgList = top;
 }
 
 

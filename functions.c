@@ -14,6 +14,7 @@ extern struct pcb *running[5];
 extern volatile int priorityLevel;
 extern int registersSaved;
 extern struct mailbox mboxList[100];
+extern struct message *msgList;
 
 void k_terminate(){
 
@@ -84,31 +85,34 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 
        //If the process isnt blocked
        if (!mboxList[recvNum].process->blocked){
-           psize = size;
-           //Allocate memory for the message coming in
-           msgPtr = malloc(psize);
-           // Copy the contents of the message into the newly allocated memory
-           memcpy(msgPtr,msg,size);
-           //Make a new message struct for the linked list
-           struct message *newMsg = malloc(sizeof(struct message));
-           //Store the message
-           newMsg->data = (char *)msgPtr;
-           newMsg->sender = srcNum;
 
-           //Append that message to linked list of messages at the receiving mailbox
-           addMsg(newMsg,recvNum);
+           //Allocate memory for the message coming in
+           struct message *msgPtr = allocate();
+           msgPtr->size = size;
+           msgPtr->sender = srcNum;
+           // Copy the contents of the message into the newly allocated memory
+           memcpy(msgPtr->data,msg,size);
+           //Put the new message at the top of the list
+           msgPtr->next = mboxList[recvNum].msg;
+           mboxList[recvNum].msg = msgPtr;
+
 
            }
        //The process is blocked and waiting for this message
         else {
-           if (size > sizeof(mboxList[recvNum].msg)){
-            //Give the message directly to the receiver
-               psize = sizeof(mboxList[recvNum].msg);
+            //determine what size of message to use - smaller is used
+           if (size > mboxList[recvNum].msg->size){
+               psize = mboxList[recvNum].msg->size;
            }
            else {
                psize = size;
            }
+           //transfer the message to the mailbox
            memcpy(mboxList[recvNum].msg->data,msg,psize);
+           mboxList[recvNum].msg->sender = srcNum;
+
+           //unblock the process that was trying to receive.
+
        }
 
     }
@@ -143,7 +147,13 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
         }
         // Nothing to receive. Block!
         else {
-            struct message *recMsg = malloc(sizeof(struct message));
+            //Allocate space for the anticipated message
+            struct message newMsg = allocate();
+            newMsg->size = size;
+            newMsg->next = 0;
+
+            mboxList[recvNum].msg = newMsg;
+            running[priorityLevel]->blocked = 1;
 
         }
         }
@@ -184,23 +194,17 @@ void addPCB(struct pcb *new, int priority){
     }
 }
 
-void addMsg(struct message *newMsg, unsigned int recvNum){
+struct message* allocate(){
 
-    //If the mailbox message is empty
-    if (!mboxList[recvNum].msg){
-        newMsg -> next = newMsg;
-        newMsg -> prev = newMsg;
-        mboxList[recvNum].msg= newMsg;
+    struct message *newMsg;
+    if (!msgList){
+        return 0;
     }
-    //Queue not empty, add in the new PCB
-    else {
-    newMsg->next = mboxList[recvNum].msg->next;
-    mboxList[recvNum].msg->next = newMsg;
-    newMsg->prev = mboxList[recvNum].msg;
-    mboxList[recvNum].msg = newMsg;
-    }
+    newMsg = msgList;
+    msgList = msgList->next;
+    return newMsg;
+
 }
-
 
 
 void findNextProcess() {

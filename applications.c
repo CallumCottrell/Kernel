@@ -98,15 +98,18 @@ int pkCall(unsigned int code, void *arg){
 }
 
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size){
-
+    struct messageStruct pmsg;
+    pmsg.destMb = dest;
+    pmsg.srcMb = src;
+    pmsg.msg = msg;
+    pmsg.size = size;
+    return pkCall(SEND, &pmsg);
 
 
 }
 
 //Try to receive from the mailbox at index destination, from the source mailbox (will be returned), the message stored in msg, and size
 int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size){
-
-
     struct messageStruct pmsg;
     pmsg.destMb = dest;
     pmsg.srcMb = src;

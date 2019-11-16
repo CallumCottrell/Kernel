@@ -78,7 +78,6 @@ struct message{
     char *data;
     int size;
     struct message *next;
-    struct message *prev;
 };
 
 struct mailbox {
