@@ -122,7 +122,7 @@ void UARTReceive(){
                  //else, the user entered time, date or alarm.
                  else
                      //processCommand();
-                     send(5,4,commandQueue->buffer,getSize(commandQueue));
+                     recv(4,&senderID,commandQueue->buffer,getSize(commandQueue));
                  break;
             // Hitting the ESC key triggers a VT100 command
              case ESCAPE :
@@ -182,9 +182,10 @@ void goodbye(){
 
     int i =0;
     volatile int callum = 9;
-    void *msg;
+    char *hey = "hey";
+    void *msg = (void*)hey;
     int sender;
-    recv(5, &sender, msg, 80);
+    send(4,5, msg, 80);
 //    for (i=0;i<5;i++)
 //        helloValue++;
 

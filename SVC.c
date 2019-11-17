@@ -99,6 +99,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     newPCB->PID = pid;
     newPCB->priority = priority;
     newPCB->regSaved = 0;
+    newPCB->blocked = 0;
     //Add the PCB to its priority queue
     addPCB(newPCB, priority);
 

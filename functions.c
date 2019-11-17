@@ -100,6 +100,7 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
            struct message *msgPtr = allocate();
            msgPtr->size = size;
            msgPtr->sender = srcNum;
+           msgPtr->data = malloc(size);
            // Copy the contents of the message into the newly allocated memory
            memcpy(msgPtr->data,msg,size);
            //Put the new message at the top of the list
@@ -124,7 +125,7 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
            //NEED to change this - addPCB was clobbering the RUNNING process.
-           running[priorityLevel] = running[priorityLevel]->next;
+           //running[priorityLevel] = running[priorityLevel]->next;
            mboxList[recvNum].process->regSaved = 1;
            mboxList[recvNum].process->blocked = 0;
 
@@ -190,10 +191,6 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
             set_PSP(running[priorityLevel]->SP);
             registersSaved = 1;
 
-            //Leaving SVC with the PSP of receiving process.
-            //Immediately rescheduling to a new process. The registers will
-            //be saved by PENDSV and a
-           // NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
 
         }
         }
@@ -233,10 +230,11 @@ void addPCB(struct pcb *new, int priority){
     new->next->prev = new;
     running[priority]->next = new;
     new->prev = running[priority];
-    running[priority] = new;
+    //running[priority] = new;
     }
 }
 
+//Retrieve a message from the list of usable messages
 struct message* allocate(){
 
     struct message *newMsg;
@@ -249,6 +247,12 @@ struct message* allocate(){
 
 }
 
+//For giving a message back to the linked list of usable messages
+int deallocate(struct message* oldMsg){
+    oldMsg->next = msgList;
+    msgList=oldMsg;
+    return 1;
+}
 
 void findNextProcess() {
     int i;
