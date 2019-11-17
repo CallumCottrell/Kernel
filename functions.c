@@ -123,8 +123,13 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
+           //NEED to change this - addPCB was clobbering the RUNNING process.
+           running[priorityLevel] = running[priorityLevel]->next;
            mboxList[recvNum].process->regSaved = 1;
-           findNextProcess();
+           mboxList[recvNum].process->blocked = 0;
+
+          // findNextProcess();
+
            NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
        }
 
@@ -171,19 +176,24 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
             //Take the process out of the running queue
             removePCB();
 
+            running[priorityLevel]->SP = get_PSP();
             //check if this is the last item in the linked list
-            if (running[priorityLevel] == running[priorityLevel]->next)
-            running[priorityLevel] = 0;
+            if (running[priorityLevel] == running[priorityLevel]->next){
+                running[priorityLevel] = 0;
+                //Running from a new priority queue now
+                findNextProcess();
+            }
             else
             running[priorityLevel] = running[priorityLevel]->next;
 
-            //Find the new priority level for accessing next process
-            findNextProcess();
-
             //The registers are saved from the SVC call in recv
             set_PSP(running[priorityLevel]->SP);
-           // registersSaved = 1;
+            registersSaved = 1;
 
+            //Leaving SVC with the PSP of receiving process.
+            //Immediately rescheduling to a new process. The registers will
+            //be saved by PENDSV and a
+           // NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
 
         }
         }
