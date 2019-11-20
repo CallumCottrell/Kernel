@@ -1,6 +1,7 @@
 /*
  * functions.c
- *  This file holds the kernel functions
+ *  This file holds the kernel functions. As it is part of the kernel, it can
+ *  access kernel variables such as running process and mailbox lists.
  *
  *  Created on: Nov 4, 2019
  *      Author: Callum Cottrell
@@ -20,7 +21,12 @@ extern struct mailbox mboxList[100];
 extern struct message *msgList;
 
 void removePCB();
+void findNextProcess();
+void processSwitch();
+int deallocate();
+struct message* allocate();
 
+/* The end of a process. Frees all memory associated with the process*/
 void k_terminate(){
 
     //unlink the PCB from the running queue
@@ -45,50 +51,98 @@ void k_terminate(){
     // free the pointer
     free(temp);
 
-    // find next process to run - if it priority level does not change, next process begins naturally
+    // find next process to run - if it priority level does not change,
+    // next process begins naturally
     findNextProcess();
 
-    // set the PSP to the new process' sp
+    // set the PSP to the new process' sp for returning from SVC
     set_PSP(running[priorityLevel]->SP);
 
 }
 
-
-
+/*Returns the PID of the currently running process*/
 int k_getPID(){
     return running[priorityLevel]->PID;
 }
 
-void k_nice(){
+/*Changes the priority of the running process. Process can lower itself below the
+ * current highest priority and as a result become
+ * "blocked" (not truly blocked, still in waiting to run queue) */
+int k_nice(unsigned int newPriority){
 
+    //Cant be higher than 6 or less than 1. No point in continuing if same priority level
+    if (newPriority != priorityLevel || newPriority < 1 || newPriority > 6){
+        return -1;
+    }
+    //Remove the running process from list of running processes
+    removePCB();
+
+    //Add the running process to the different p queue
+    addPCB(running[priorityLevel], newPriority);
+
+    //Get the new running process
+    processSwitch();
+
+    return 1;
 }
 
 int k_bind(unsigned int boxNumber){
 
     if (boxNumber > 100){
-        return -3;
+        return -1;
     }
     else if (!boxNumber){
-       //find a free mailbox
+       //find a free mailbox - not real time - will need fixing if i have time
+        //Maybe a linked list of free mboxes...
+        for (boxNumber = 1; boxNumber < 100; boxNumber++){
+            //If there is no process using this mbox number
+            if (!mboxList[boxNumber].process){
+                mboxList[boxNumber].process = running[priorityLevel];
+                return boxNumber;
+            }
+        }
     }
+    // Accessing a specific mbox
     else {
         //access mboxList at boxNumber to see if its in use
         if (mboxList[boxNumber].process){
-            //fail - is in use
+            //Fail - is in use
             return -1;
         }
         else {
+            //Mbox is free. Store pointer to the running process in mbox
             mboxList[boxNumber].process = running[priorityLevel];
             return boxNumber;
         }
 
     }
+    //Failed
+    return -1;
 }
 
-int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int size){
+int k_unbind(unsigned int boxNumber){
+
+    //Can't unbind from number out of range
+    if (boxNumber > 100 || !boxNumber){
+        return -1;
+    }
+    // If the mbox list's process is the running process we can unbind
+    else if (mboxList[boxNumber].process == running[priorityLevel]){
+        //Free the messages that could have been stored
+        while (mboxList[boxNumber].msg){
+            deallocate(mboxList[boxNumber].msg);
+            mboxList[boxNumber].msg = mboxList[boxNumber].msg->next;
+        }
+        mboxList[boxNumber].blocked = 0;
+        mboxList[boxNumber].process = 0;
+    }
+
+}
+
+/* Send a message to a the recvNum mailbox. */
+int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int size){
 
     unsigned psize;
-    void *msgPtr;
 
     //Make sure that the sender owns the mailbox and other mailbox exists
     if (running[priorityLevel] == mboxList[srcNum].process && mboxList[recvNum].process!=0){
@@ -98,15 +152,18 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 
            //Allocate memory for the message coming in
            struct message *msgPtr = allocate();
-           msgPtr->size = size;
-           msgPtr->sender = srcNum;
-           msgPtr->data = malloc(size);
-           // Copy the contents of the message into the newly allocated memory
-           memcpy(msgPtr->data,msg,size);
-           //Put the new message at the top of the list
-           msgPtr->next = mboxList[recvNum].msg;
-           mboxList[recvNum].msg = msgPtr;
-
+           if (msgPtr){
+               msgPtr->size = size;
+               msgPtr->sender = srcNum;
+               msgPtr->data = (char *)malloc(size);
+               // Copy the contents of the message into the newly allocated memory
+               memcpy(msgPtr->data,msg,size);
+               //Put the new message at the top of the list
+               msgPtr->next = mboxList[recvNum].msg;
+               mboxList[recvNum].msg = msgPtr;
+           }
+           //Failed due to lack of message space
+           else return -1;
 
            }
        //The process is blocked and waiting for this message
@@ -144,7 +201,7 @@ int k_send(unsigned int recvNum,unsigned int srcNum, void *msg, unsigned int siz
 }
 
 //Kernel receive function
-int k_recv(unsigned int recvNum, void *msg, unsigned int size){
+int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size){
 
     unsigned int psize;
 
@@ -160,8 +217,14 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
 
             //Copy the message stored in the mailbox
             memcpy(msg, mboxList[recvNum].msg->data, psize);
-            // unlink mboxLise[recvNum].msg
-            // free the message
+            //Free the temp storage
+            free(mboxList[recvNum].msg->data);
+            //Save the sender
+            *src = mboxList[recvNum].msg->sender;
+            //Free the message
+            deallocate(mboxList[recvNum].msg);
+            mboxList[recvNum].msg = mboxList[recvNum].msg->next;
+
             return psize;
         }
         // Nothing to receive. Block!
@@ -171,49 +234,40 @@ int k_recv(unsigned int recvNum, void *msg, unsigned int size){
             newMsg->size = size;
             newMsg->next = 0;
             newMsg->data = malloc(size);
+            *src = newMsg->sender;
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
 
             //Take the process out of the running queue
             removePCB();
 
-            running[priorityLevel]->SP = get_PSP();
-            //check if this is the last item in the linked list
-            if (running[priorityLevel] == running[priorityLevel]->next){
-                running[priorityLevel] = 0;
-                //Running from a new priority queue now
-                findNextProcess();
-            }
-            else
-            running[priorityLevel] = running[priorityLevel]->next;
+            //Switch the PSP for popping new PC when returning from SVC
+            processSwitch();
+       }
+   }
 
-            //The registers are saved from the SVC call in recv
-            set_PSP(running[priorityLevel]->SP);
-            registersSaved = 1;
-
-
-        }
-        }
-
-
+    return psize;
 }
 
+/* Saves the PSP of the running process, and changes the currently running process
+To the next in the running queue, and sets the PSP to the SP of the new running process */
 void nextProcess() {
     running[priorityLevel] -> SP = get_PSP();
     running[priorityLevel] = running[priorityLevel]->next;
     set_PSP(running[priorityLevel]->SP);
 }
 
-
+/*This unlinks the running PCB from the list of waiting to run processes
+    When this function returns, running[pL] still points to the running process.
+    Programmer must handle the process switching to the next. If the process was the only
+    item in the list, this unlinking does nothing. The programmer must also handle that case*/
 void removePCB (){
-    //unlink from list
     running[priorityLevel]->prev->next = running[priorityLevel]->next;
     running[priorityLevel]->next->prev = running[priorityLevel]->prev;
-
 }
 
 
-// Add a pcb to its priority queue
+// Add a PCB to the desired priority queue
 void addPCB(struct pcb *new, int priority){
 
     //If the priority queue is empty
@@ -224,13 +278,11 @@ void addPCB(struct pcb *new, int priority){
     }
     //Queue not empty, add in the new PCB
     else {
-    struct pcb *last = running[priority]->prev;
+        new->next = running[priority]->next;
+        new->next->prev = new;
+        running[priority]->next = new;
+        new->prev = running[priority];
 
-    new->next = running[priority]->next;
-    new->next->prev = new;
-    running[priority]->next = new;
-    new->prev = running[priority];
-    //running[priority] = new;
     }
 }
 
@@ -254,10 +306,36 @@ int deallocate(struct message* oldMsg){
     return 1;
 }
 
+/* This function is called whenever there is a change to the priority queue of running
+ * processes. The purpose of the function is to determine which queue to access when calling
+ * running[priorityLevel] by finding the highest priorityLevel queue with a process within it
+ */
 void findNextProcess() {
     int i;
-     for ( i=0; i<=5; i++){
-         if (running[i])
-             priorityLevel=i;
-     }
+    for (i=0; i<6; i++){
+        if (running[i])
+            priorityLevel=i;
+    }
+}
+
+/* This function allows for the switching of processes within the kernel. When
+ * exiting the SVC call, the a new PSP will have been set, returning to
+ * a different process than the one that called SVC originally.*/
+void processSwitch(){
+
+    //Store the current PSP
+    running[priorityLevel]->SP = get_PSP();
+
+    //check if this is the last PCB in its p queue
+    if (running[priorityLevel] == running[priorityLevel]->next)
+        running[priorityLevel] = 0;
+    else
+        running[priorityLevel] = running[priorityLevel]->next;
+
+    //Ensure that the current priority level is active
+    findNextProcess();
+
+    //Set the PSP to the new running process
+    set_PSP(running[priorityLevel]->SP);
+
 }

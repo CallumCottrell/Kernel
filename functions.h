@@ -12,11 +12,11 @@ void k_terminate();
 
 int k_getPID();
 
-void k_nice();
+int k_nice(unsigned int newPriority);
 
 int k_bind(unsigned int boxNum);
 
-int k_recv(unsigned int recvNum, void *msg, unsigned int size);
+int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size);
 
 int k_send(unsigned int recvNum, unsigned int send, void *msg, unsigned int size);
 

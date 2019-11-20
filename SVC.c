@@ -36,8 +36,8 @@ void initKernel();
 
 void main (void) {
 
-   regProcess(UARTReceive, 1000, 5);
-   regProcess(goodbye, 1001, 5);
+   regProcess(UARTReceive, 1000, 3);
+   regProcess(goodbye, 1001, 3);
    regProcess(lowest, 10, 0);
    initKernel();
    SVC();
@@ -104,7 +104,7 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     addPCB(newPCB, priority);
 
     //Allocate 512 bytes for the process' stack
-    unsigned int stackPointer = malloc(1024*sizeof(unsigned char));
+    unsigned int stackPointer = malloc(1024 * sizeof(unsigned char));
     newPCB->stackBase = stackPointer;
     stackPointer = stackPointer + (1024 * sizeof(unsigned char));
     stackPointer = stackPointer - (16 * sizeof(unsigned int));
@@ -232,28 +232,37 @@ else /* Subsequent SVCs */
             k_terminate();
             break;
 
+    case NICE:
+            kcaptr->rtnvalue = k_nice(kcaptr->arg1);
+            break;
+
     case GETID:
-           kcaptr->rtnvalue = k_getPID();
-           break;
+            kcaptr->rtnvalue = k_getPID();
+            break;
+
     case BIND:
-           kcaptr->rtnvalue = k_bind(kcaptr->arg1);
-           break;
+            kcaptr->rtnvalue = k_bind(kcaptr->arg1);
+            break;
+
+    case UNBIND:
+            kcaptr->rtnvalue = k_unbind(kcaptr->arg1);
+            break;
 
     case SEND:
     {
-           struct messageStruct *m;
-           m = (struct messageStruct*)kcaptr->arg1;
-           kcaptr->rtnvalue = k_send(m->destMb, m->srcMb, m->msg, m->size);
-           break;
+            struct messageStruct *m;
+            m = (struct messageStruct*)kcaptr->arg1;
+            kcaptr->rtnvalue = k_send(m->destMb, m->srcMb, m->msg, m->size);
+            break;
     }
     case RECV:{
-        struct messageStruct *m;
-                 m = (struct messageStruct*)kcaptr->arg1;
-                 kcaptr->rtnvalue = k_recv(m->destMb, m->msg, m->size);
-                 break;
+            struct messageStruct *m;
+            m = (struct messageStruct*)kcaptr->arg1;
+            kcaptr->rtnvalue = k_recv(m->destMb, m->srcMb, m->msg, m->size);
+            break;
     }
     default:
-        kcaptr -> rtnvalue = -1;
+            kcaptr -> rtnvalue = -1;
     }
 
 }

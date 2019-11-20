@@ -33,6 +33,7 @@ volatile int helloValue = 0;
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size);
 int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size);
 int bind(unsigned int mboxNum);
+int nice(unsigned int newPriority);
 
 int pkCall(unsigned int code, void *arg);
 
@@ -122,7 +123,7 @@ void UARTReceive(){
                  //else, the user entered time, date or alarm.
                  else
                      //processCommand();
-                     recv(4,&senderID,commandQueue->buffer,getSize(commandQueue));
+                     send(5,4,commandQueue->buffer,getSize(commandQueue));
                  break;
             // Hitting the ESC key triggers a VT100 command
              case ESCAPE :
@@ -184,8 +185,11 @@ void goodbye(){
     volatile int callum = 9;
     char *hey = "hey";
     void *msg = (void*)hey;
-    int sender;
-    send(4,5, msg, 80);
+    int sender = 0;
+    recv(5,&sender, msg, 80);
+    if (sender == 4){
+        nice(4);
+    }
 //    for (i=0;i<5;i++)
 //        helloValue++;
 
@@ -224,7 +228,7 @@ int pkCall(unsigned int code, void *arg){
     return kArgs.rtnvalue;
 
 }
-
+/* */
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size){
     struct messageStruct pmsg;
     pmsg.destMb = dest;
@@ -249,4 +253,16 @@ int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size){
 
 int bind(unsigned int mboxNum){
     return pkCall(BIND, mboxNum);
+}
+
+int unbind(unsigned int mboxNum){
+    return pkCall(UNBIND, mboxNum);
+}
+
+int nice(unsigned int newPriority){
+    return pkCall(NICE, newPriority);
+}
+
+int print(char *msg){
+    return pkCall(PRINT, msg);
 }
