@@ -17,7 +17,9 @@ struct messageStruct {
     //Source mailbox index
     unsigned int *srcMb;
     //The message
-    void *msg;
+   // void *msg;
+    char msg[80];
+
     unsigned int size;
 };
 
