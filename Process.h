@@ -75,8 +75,8 @@ struct pcb *prev;
 
 // Interprocess Communication
 struct message{
-    int sender;
-    char *data;
+    unsigned int *sender;
+    void *data;
     int size;
     struct message *next;
 };

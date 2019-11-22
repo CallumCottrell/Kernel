@@ -12,6 +12,8 @@ void k_terminate();
 
 int k_getPID();
 
+int k_print();
+
 int k_nice(unsigned int newPriority);
 
 int k_unbind (unsigned int boxNum);

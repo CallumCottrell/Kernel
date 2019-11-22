@@ -13,7 +13,8 @@
 
 #define TRIGGER_PENDSV 0x10000000
 #define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
-
+#define TRUE 1
+#define FALSE 0
 extern struct pcb *running[6];
 extern volatile int priorityLevel;
 extern int registersSaved;
@@ -65,13 +66,18 @@ int k_getPID(){
     return running[priorityLevel]->PID;
 }
 
+//For handling prints to the screen
+int k_print(){
+
+}
+
 /*Changes the priority of the running process. Process can lower itself below the
  * current highest priority and as a result become
  * "blocked" (not truly blocked, still in waiting to run queue) */
 int k_nice(unsigned int newPriority){
 
     //Cant be higher than 6 or less than 1. No point in continuing if same priority level
-    if (newPriority != priorityLevel || newPriority < 1 || newPriority > 6){
+    if (newPriority == priorityLevel || newPriority < 1 || newPriority > 6){
         return -1;
     }
     //Remove the running process from list of running processes
@@ -81,7 +87,7 @@ int k_nice(unsigned int newPriority){
     addPCB(running[priorityLevel], newPriority);
 
     //Get the new running process
-    processSwitch();
+    processSwitch(TRUE);
 
     return 1;
 }
@@ -155,7 +161,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            if (msgPtr){
                msgPtr->size = size;
                msgPtr->sender = srcNum;
-               msgPtr->data = (char *)malloc(size);
+               //msgPtr->data = (char *)malloc(size);
                // Copy the contents of the message into the newly allocated memory
                memcpy(msgPtr->data,msg,size);
                //Put the new message at the top of the list
@@ -177,7 +183,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            }
            //transfer the message to the mailbox
            memcpy(mboxList[recvNum].msg->data,msg,psize);
-           mboxList[recvNum].msg->sender = srcNum;
+           *(mboxList[recvNum].msg->sender) = srcNum;
 
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
@@ -185,6 +191,9 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            //running[priorityLevel] = running[priorityLevel]->next;
            mboxList[recvNum].process->regSaved = 1;
            mboxList[recvNum].process->blocked = 0;
+
+           //Process has been added - need to determine the new priority level
+
 
           // findNextProcess();
 
@@ -203,13 +212,24 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
 //Kernel receive function
 int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size){
 
-    unsigned int psize;
+    unsigned int psize = -1;
 
     //Make sure that the calling process is the owner of the mailbox
     if (mboxList[recvNum].process == running[priorityLevel]){
 
-        //Is there anything to receive?
+        //There is a message waiting
         if (mboxList[recvNum].msg != 0){
+
+            //Should I be able to receive from a specific process?
+//            if (*src != 0){
+//            struct message *top = mboxList[recvNum].msg;
+//
+//                while (mboxList[recvNum].msg){
+//
+//
+//                }
+//            }
+
             if (mboxList[recvNum].msg->size > size)
                 psize = size;
             else
@@ -217,15 +237,16 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
 
             //Copy the message stored in the mailbox
             memcpy(msg, mboxList[recvNum].msg->data, psize);
-            //Free the temp storage
-            free(mboxList[recvNum].msg->data);
+
             //Save the sender
             *src = mboxList[recvNum].msg->sender;
-            //Free the message
+
+            //"Free" the message
             deallocate(mboxList[recvNum].msg);
+
+            //Can be null
             mboxList[recvNum].msg = mboxList[recvNum].msg->next;
 
-            return psize;
         }
         // Nothing to receive. Block!
         else {
@@ -233,8 +254,8 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             struct message *newMsg = allocate();
             newMsg->size = size;
             newMsg->next = 0;
-            newMsg->data = malloc(size);
-            *src = newMsg->sender;
+            newMsg->data = msg;
+            newMsg->sender = src;
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
 
@@ -242,9 +263,12 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             removePCB();
 
             //Switch the PSP for popping new PC when returning from SVC
-            processSwitch();
+            processSwitch(TRUE);
        }
    }
+    else {
+        psize = -1;
+    }
 
     return psize;
 }
@@ -321,17 +345,18 @@ void findNextProcess() {
 /* This function allows for the switching of processes within the kernel. When
  * exiting the SVC call, the a new PSP will have been set, returning to
  * a different process than the one that called SVC originally.*/
-void processSwitch(){
+void processSwitch(int pcbRemoved){
 
     //Store the current PSP
     running[priorityLevel]->SP = get_PSP();
 
+    if (pcbRemoved){
     //check if this is the last PCB in its p queue
     if (running[priorityLevel] == running[priorityLevel]->next)
         running[priorityLevel] = 0;
     else
         running[priorityLevel] = running[priorityLevel]->next;
-
+    }
     //Ensure that the current priority level is active
     findNextProcess();
 
@@ -339,3 +364,4 @@ void processSwitch(){
     set_PSP(running[priorityLevel]->SP);
 
 }
+

@@ -1,7 +1,7 @@
 #ifndef KERNELCALLS_H_
 #define KERNELCALLS_H_
 
-enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE, BIND, UNBIND, SEND, RECV};
+enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE, BIND, UNBIND, SEND, RECV, PRINT};
 
 //Kernel Call arguments.
 struct kCallArgs
@@ -17,8 +17,8 @@ struct messageStruct {
     //Source mailbox index
     unsigned int *srcMb;
     //The message
-   // void *msg;
-    char msg[80];
+    void *msg;
+   // char msg[80];
 
     unsigned int size;
 };

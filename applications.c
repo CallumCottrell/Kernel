@@ -31,17 +31,18 @@ void assignR7(unsigned long);
 volatile int helloValue = 0;
 
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size);
-int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size);
+int recv(unsigned int dest, unsigned int *src, char *msg, unsigned int size);
 int bind(unsigned int mboxNum);
 int nice(unsigned int newPriority);
+int printRequest(char *msg);
 
 int pkCall(unsigned int code, void *arg);
 
 
 void UARTReceive(){
-
+   int sender = 4;
    //Bind to mailbox 4
-   bind(4);
+   bind(sender);
 
    // Queue for holding the chars received over uart
    queue uartInBufferAddress;
@@ -123,7 +124,7 @@ void UARTReceive(){
                  //else, the user entered time, date or alarm.
                  else
                      //processCommand();
-                     send(5,4,commandQueue->buffer,getSize(commandQueue));
+                     send(5,sender,commandQueue->buffer,getSize(commandQueue));
                  break;
             // Hitting the ESC key triggers a VT100 command
              case ESCAPE :
@@ -183,16 +184,19 @@ void goodbye(){
 
     int i =0;
     volatile int callum = 9;
-    char *hey = "hey";
-    void *msg = (void*)hey;
-    int sender = 0;
-    recv(5,&sender, msg, 80);
+    //char *hey = "hey";
+    char msg[40] = "hey";
+
+    unsigned int sender = 0;
+
+    recv(5,&sender, msg, 40);
+
     if (sender == 4){
         nice(4);
     }
 //    for (i=0;i<5;i++)
 //        helloValue++;
-
+    while(1);
   //  SVC();
 }
 
@@ -237,15 +241,14 @@ int send(unsigned int dest, unsigned int src, void *msg, unsigned int size){
     pmsg.size = size;
     return pkCall(SEND, &pmsg);
 
-
 }
 
 //Try to receive from the mailbox at index destination, from the source mailbox (will be returned), the message stored in msg, and size
-int recv(unsigned int dest, unsigned int *src, void *msg, unsigned int size){
+int recv(unsigned int dest, unsigned int *src, char *msg, unsigned int size){
     struct messageStruct pmsg;
     pmsg.destMb = dest;
     pmsg.srcMb = src;
-    pmsg.msg = msg;
+    pmsg.msg =(void*) msg;
     pmsg.size = size;
     return pkCall(RECV, &pmsg);
 
@@ -263,6 +266,6 @@ int nice(unsigned int newPriority){
     return pkCall(NICE, newPriority);
 }
 
-int print(char *msg){
+int printRequest(char *msg){
     return pkCall(PRINT, msg);
 }

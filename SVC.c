@@ -240,6 +240,9 @@ else /* Subsequent SVCs */
             kcaptr->rtnvalue = k_getPID();
             break;
 
+    case PRINT:
+            kcaptr->rtnvalue = k_print();
+            break;
     case BIND:
             kcaptr->rtnvalue = k_bind(kcaptr->arg1);
             break;
