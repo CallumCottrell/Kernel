@@ -33,9 +33,6 @@ void k_terminate(){
     //unlink the PCB from the running queue
     removePCB();
 
-    //Is running bound to any mailboxes? free mailboxes
-
-
     //Store the running PCB for freeing after next PCB found
     struct pcb *temp = running[priorityLevel];
     //Go to next - no way back to removed PCB from next
@@ -80,14 +77,30 @@ int k_nice(unsigned int newPriority){
     if (newPriority == priorityLevel || newPriority < 1 || newPriority > 6){
         return -1;
     }
+
+    //Store the current PSP
+    running[priorityLevel]->SP = get_PSP();
+
     //Remove the running process from list of running processes
     removePCB();
 
-    //Add the running process to the different p queue
-    addPCB(running[priorityLevel], newPriority);
+    //Save the currently running process for after scheduling
+    struct pcb *movingPCB = running[priorityLevel];
 
-    //Get the new running process
-    processSwitch(TRUE);
+    //check if this was the last PCB in its p queue
+    if (running[priorityLevel] == running[priorityLevel]->next)
+        running[priorityLevel] = 0;
+    else
+        running[priorityLevel] = running[priorityLevel]->next;
+
+    //Now the pcb can be added
+    addPCB(movingPCB, newPriority);
+
+    //Ensure that the current priority level is up-to-date
+    findNextProcess();
+
+    //Set the PSP to the new running process
+    set_PSP(running[priorityLevel]->SP);
 
     return 1;
 }
@@ -193,11 +206,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            mboxList[recvNum].process->blocked = 0;
 
            //Process has been added - need to determine the new priority level
-
-
-          // findNextProcess();
-
-           NVIC_INT_CTRL_R |= TRIGGER_PENDSV;
+           processSwitch(FALSE);
        }
 
     }
