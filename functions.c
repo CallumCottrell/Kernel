@@ -64,8 +64,10 @@ int k_getPID(){
 }
 
 //For handling prints to the screen
-int k_print(){
-
+int k_print(struct CUPch *toPrint){
+    char *string = (char*)toPrint;
+    while (string)
+    print(string);
 }
 
 /*Changes the priority of the running process. Process can lower itself below the
@@ -105,6 +107,7 @@ int k_nice(unsigned int newPriority){
     return 1;
 }
 
+/* The kernel function that takes a mail box number and tries to bind it to the running process*/
 int k_bind(unsigned int boxNumber){
 
     if (boxNumber > 100){
@@ -175,6 +178,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
                msgPtr->size = size;
                msgPtr->sender = srcNum;
                //msgPtr->data = (char *)malloc(size);
+
                // Copy the contents of the message into the newly allocated memory
                memcpy(msgPtr->data,msg,size);
                //Put the new message at the top of the list
@@ -195,7 +199,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
                psize = size;
            }
            //transfer the message to the mailbox
-           memcpy(mboxList[recvNum].msg->data,msg,psize);
+           memcpy(mboxList[recvNum].msg->msgLoc,msg,psize);
            *(mboxList[recvNum].msg->sender) = srcNum;
 
            //unblock the process that was trying to receive.
@@ -263,8 +267,11 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             struct message *newMsg = allocate();
             newMsg->size = size;
             newMsg->next = 0;
-            newMsg->data = msg;
+           // newMsg->data = msg;
+            //newMsg->data = malloc(size);
+            newMsg->msgLoc = msg;
             newMsg->sender = src;
+
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
 

@@ -39,6 +39,7 @@ void main (void) {
    regProcess(UARTReceive, 1000, 3);
    regProcess(goodbye, 1001, 3);
    regProcess(lowest, 10, 0);
+   regProcess(outProcess,1002, 5);
    initKernel();
    SVC();
 
@@ -240,9 +241,11 @@ else /* Subsequent SVCs */
             kcaptr->rtnvalue = k_getPID();
             break;
 
-    case PRINT:
-            kcaptr->rtnvalue = k_print();
+    case PRINT:{
+        struct CUPch *toPrint = (struct CUPch *)kcaptr->arg1;
+            kcaptr->rtnvalue = k_print(toPrint);
             break;
+    }
     case BIND:
             kcaptr->rtnvalue = k_bind(kcaptr->arg1);
             break;

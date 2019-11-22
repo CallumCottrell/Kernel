@@ -86,8 +86,6 @@ void UARTReceive(){
    //While the user is still using the program
    while (1){
 
-       //Block this process and wait for UART info
-       //recv(4, &senderID, msg, 80);
        //If the input queue was updated form the string
        //If the timer is set to go off, alarmPtr will be set
        //if the output queue is full output a character
@@ -171,11 +169,18 @@ void check(){
 
 }
 
-void check2(){
+void outProcess(){
+    //Bind to a mailbox
 
-    volatile int wow;
-    volatile int wow2;
+    bind(6);
+    void *msg;
+    int size;
 
+    while(1){
+        size = recv(6,0,msg,80);
+        pkCall(PRINT, msg);
+
+    }
 }
 void goodbye(){
     helloValue = 20000;
@@ -183,6 +188,7 @@ void goodbye(){
     bind(5);
 
     int i =0;
+
     volatile int callum = 9;
     //char *hey = "hey";
     char msg[40] = "hey";

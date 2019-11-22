@@ -7,12 +7,12 @@
 
 #ifndef FUNCTIONS_H_
 #define FUNCTIONS_H_
-
+#include "process.h"
 void k_terminate();
 
 int k_getPID();
 
-int k_print();
+int k_print(struct CUPch *toPrint);
 
 int k_nice(unsigned int newPriority);
 

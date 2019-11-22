@@ -14,5 +14,5 @@ extern void goodbye();
 extern void lowest();
 extern void terminate();
 extern void UARTReceive();
-
+extern void outProcess();
 #endif /* APPLICATIONS_H_ */
