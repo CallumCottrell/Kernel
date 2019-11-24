@@ -18,7 +18,7 @@
 
 #define MSP_RETURN 0xFFFFFFF9    //LR value: exception return using MSP as SP
 #define PSP_RETURN 0xFFFFFFFD    //LR value: exception return using PSP as SP
-
+#define ESC 27
 void set_LR(volatile unsigned long);
 unsigned long get_PSP();
 void set_PSP(volatile unsigned long);
@@ -98,6 +98,7 @@ char semicolon;
 char col[2];    /* 01 through 80 */
 char cmdchar;
 char nul;
+char ch;
 };
 
 #endif /*PROCESS_H_*/

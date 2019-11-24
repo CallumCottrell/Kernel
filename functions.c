@@ -10,6 +10,7 @@
 #include "process.h"
 #include <stdio.h>
 #include "functions.h"
+#include "cqueue.h"
 
 #define TRIGGER_PENDSV 0x10000000
 #define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
@@ -20,6 +21,7 @@ extern volatile int priorityLevel;
 extern int registersSaved;
 extern struct mailbox mboxList[100];
 extern struct message *msgList;
+extern queue *outQueue;
 
 void removePCB();
 void findNextProcess();
@@ -66,8 +68,11 @@ int k_getPID(){
 //For handling prints to the screen
 int k_print(struct CUPch *toPrint){
     char *string = (char*)toPrint;
-    while (string)
+    //Store the string in outQueue
     print(string);
+    //Print outqueue to the screen
+    while(getSize(outQueue))
+        transmitByte();
 }
 
 /*Changes the priority of the running process. Process can lower itself below the
@@ -206,7 +211,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
            //NEED to change this - addPCB was clobbering the RUNNING process.
            //running[priorityLevel] = running[priorityLevel]->next;
-           mboxList[recvNum].process->regSaved = 1;
+           mboxList[recvNum].process->regSaved = 0;
            mboxList[recvNum].process->blocked = 0;
 
            //Process has been added - need to determine the new priority level

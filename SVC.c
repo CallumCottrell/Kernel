@@ -16,6 +16,8 @@
 #include "SysTick.h"
 #include "applications.h"
 #include "functions.h"
+#include "cqueue.h"
+#include "time.h"
 
 #define TRIGGER_PENDSV 0x10000000
 #define NVIC_INT_CTRL_R (*((volatile unsigned long *)0xE000ED04))
@@ -30,14 +32,20 @@ volatile int registersSaved;
 struct mailbox mboxList[100];
 struct message *msgList;
 struct pcb *blocked;
+// Global variables
+extern Date *date;
+extern Time *time;
+extern queue *inQueue;
+extern queue *commandQueue;
+extern queue *outQueue;
 
 int regProcess();
 void initKernel();
 
 void main (void) {
 
-   regProcess(UARTReceive, 1000, 3);
-   regProcess(goodbye, 1001, 3);
+  // regProcess(UARTReceive, 1000, 3);
+  // regProcess(goodbye, 1001, 3);
    regProcess(lowest, 10, 0);
    regProcess(outProcess,1002, 5);
    initKernel();
@@ -49,6 +57,26 @@ void main (void) {
 void initKernel(){
     //Find the process to run first
     findNextProcess();
+
+    // Queue for holding the chars received over uart
+    queue uartInBufferAddress;
+    inQueue = &uartInBufferAddress;
+    initQueue(inQueue);
+
+    // A queue that stores the command entered by the user
+    queue commandQueueAddress;
+    commandQueue = &commandQueueAddress;
+    initQueue(commandQueue);
+
+    //A queue for storing specifically VT-100 commands
+    queue VTQueueAddress;
+    queue *VTQueue = &VTQueueAddress;
+    initQueue(VTQueue);
+
+    //If this queue has data stored to it, it will be transmitted
+    queue outQueueBufferAddress;
+    outQueue = &outQueueBufferAddress;
+    initQueue(outQueue);
 
     registersSaved = 0;
     /* Initialize UART */

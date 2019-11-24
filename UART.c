@@ -141,7 +141,7 @@ void print(char *string){
 //Prints one byte to the screen (useful for backspace)
 void printChar(char byte){
 
-    while((UART0_FR_R & UART_FR_TXFF));
+    if((UART0_FR_R & UART_FR_TXFF))
     UART0_DR_R = byte;
 
 }

@@ -34,4 +34,6 @@ extern int readAlarm(void);
 
 extern void printAlarm(void);
 
+int updateTime();
+
 #endif /* TIME_H_ */

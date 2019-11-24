@@ -16,16 +16,15 @@
 #include "time.h"
 #include "UART.h"
 
+
+extern int alarmPtr;
+extern int alarmTenthSeconds;
 // Global variables
 extern Date *date;
 extern Time *time;
 extern queue *inQueue;
 extern queue *commandQueue;
 extern queue *outQueue;
-
-
-extern int alarmPtr;
-extern int alarmTenthSeconds;
 
 void assignR7(unsigned long);
 volatile int helloValue = 0;
@@ -35,6 +34,7 @@ int recv(unsigned int dest, unsigned int *src, char *msg, unsigned int size);
 int bind(unsigned int mboxNum);
 int nice(unsigned int newPriority);
 int printRequest(char *msg);
+int printVT(int row, int col, char ch);
 
 int pkCall(unsigned int code, void *arg);
 
@@ -44,36 +44,11 @@ void UARTReceive(){
    //Bind to mailbox 4
    bind(sender);
 
-   // Queue for holding the chars received over uart
-   queue uartInBufferAddress;
-   inQueue = &uartInBufferAddress;
-   initQueue(inQueue);
-
-   // A queue that stores the command entered by the user
-   queue commandQueueAddress;
-   commandQueue = &commandQueueAddress;
-   initQueue(commandQueue);
-
-   //A queue for storing specifically VT-100 commands
-   queue VTQueueAddress;
-   queue *VTQueue = &VTQueueAddress;
-   initQueue(VTQueue);
-
-   //If this queue has data stored to it, it will be transmitted
-   queue outQueueBufferAddress;
-   outQueue = &outQueueBufferAddress;
-   initQueue(outQueue);
-
-   //Allocate memory for the time struct and initalize variables
-   Time timeAddress = {0,0,0,0};
-   time = &timeAddress;
-
-   //Allocate memory for the date struct and initialize variables
-   Date dateAddress = {1,8,2019};
-   date = &dateAddress;
-
    char data;
-
+   //A queue for storing specifically VT-100 commands
+    queue VTQueueAddress;
+    queue *VTQueue = &VTQueueAddress;
+    initQueue(VTQueue);
    //The index of the buffer where the command started
    int vt100Command = 0;
 
@@ -123,6 +98,7 @@ void UARTReceive(){
                  else
                      //processCommand();
                      send(5,sender,commandQueue->buffer,getSize(commandQueue));
+
                  break;
             // Hitting the ESC key triggers a VT100 command
              case ESCAPE :
@@ -181,9 +157,10 @@ void outProcess(){
         pkCall(PRINT, msg);
 
     }
+
 }
 void goodbye(){
-    helloValue = 20000;
+
     //Bind to mailbox 5
     bind(5);
 
@@ -197,23 +174,36 @@ void goodbye(){
 
     recv(5,&sender, msg, 40);
 
-    if (sender == 4){
+    if (sender == 4)
         nice(4);
-    }
-//    for (i=0;i<5;i++)
-//        helloValue++;
-    while(1);
-  //  SVC();
+
 }
 
 //The process that always runs
 void lowest() {
-int i;
-    for (i=0;i<1000000;i++){
-        helloValue++;
+
+    //Allocate memory for the time struct and initalize variables
+    Time timeAddress = {0,0,0,0};
+    time = &timeAddress;
+
+    //Allocate memory for the date struct and initialize variables
+    Date dateAddress = {1,8,2019};
+    date = &dateAddress;
+
+    char idle = 'A';
+    while (1){
+        updateTime();
+        if (time->seconds % 2 == 0){
+        // Form a CUP to print in the top right
+            printVT(1, 78, idle);
+            idle++;
+            if (idle == 'Z')
+                idle = 'A';
+        }
     }
 
 }
+
 
 //Function that LR points to for all processes
 void terminate(){
@@ -275,3 +265,22 @@ int nice(unsigned int newPriority){
 int printRequest(char *msg){
     return pkCall(PRINT, msg);
 }
+
+int printVT(int row, int col, char ch)
+{
+/* Output a single character to specified screen position */
+/* CUP (Cursor position) command plus character to display */
+/* Assumes row and col are valid (1 through 24 and 1 through 80, respectively) */
+struct CUPch uart_data;
+    /* Since globals aren’t permitted, this must be done each call */
+    uart_data . esc = ESC;
+    uart_data . sqrbrkt = '[';
+    uart_data . line[0] = '0' + row / 10;
+    uart_data . line[1] = '0' + row % 10;
+    uart_data . semicolon = ';';
+    uart_data . col[0] = '0' + col / 10;
+    uart_data . line[1] = '0' + col % 10;
+    uart_data . ch = ch;
+    return pkCall(PRINT, &uart_data);
+}
+

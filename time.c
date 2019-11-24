@@ -39,7 +39,7 @@
 int parseCommand(const char* commandConstant);
 
 //Time function prototypes
-int updateTime();
+
 void printTime();
 int parseTime();
 int parseAlarm();

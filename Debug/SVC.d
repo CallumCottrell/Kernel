@@ -11,6 +11,8 @@ SVC.obj: ../UART.h
 SVC.obj: ../SysTick.h
 SVC.obj: ../applications.h
 SVC.obj: ../functions.h
+SVC.obj: ../cqueue.h
+SVC.obj: ../time.h
 
 ../SVC.c: 
 C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdio.h: 
@@ -23,3 +25,5 @@ C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include/stdlib.h:
 ../SysTick.h: 
 ../applications.h: 
 ../functions.h: 
+../cqueue.h: 
+../time.h: 
