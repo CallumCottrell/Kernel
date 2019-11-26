@@ -44,8 +44,8 @@ void initKernel();
 
 void main (void) {
 
-  // regProcess(UARTReceive, 1000, 3);
-  // regProcess(goodbye, 1001, 3);
+   //regProcess(UARTReceive, 1000, 3);
+   //regProcess(outputProcess, 1001, 3);
    regProcess(lowest, 10, 0);
    regProcess(outProcess,1002, 5);
    initKernel();
@@ -59,19 +59,28 @@ void initKernel(){
     findNextProcess();
 
     // Queue for holding the chars received over uart
-    queue uartInBufferAddress;
-    inQueue = &uartInBufferAddress;
+    inQueue = malloc(sizeof(queue));
     initQueue(inQueue);
 
     // A queue that stores the command entered by the user
-    queue commandQueueAddress;
-    commandQueue = &commandQueueAddress;
+    commandQueue = malloc(sizeof(queue));
     initQueue(commandQueue);
 
     //If this queue has data stored to it, it will be transmitted
     outQueue = malloc(sizeof(queue));
     initQueue(outQueue);
-    registersSaved = 0;
+
+    //Allocate memory for the time struct and initalize variables
+
+    time = malloc(sizeof(Time));
+    time->seconds = 0;
+    time->minutes = 0;
+    time->hours = 0;
+    time->tenths = 0;
+
+    //Allocate memory for the date struct and initialize variables
+    date = malloc(sizeof(Date));
+
     /* Initialize UART */
     UART0_Init();           // Initialize UART0
     InterruptEnable(INT_VEC_UART0);       // Enable UART0 interrupts
@@ -262,11 +271,14 @@ else /* Subsequent SVCs */
             kcaptr->rtnvalue = k_getPID();
             break;
 
-    case PRINT:{
+    case PRINTVT:{
         struct CUPch *toPrint = (struct CUPch *)kcaptr->arg1;
-            kcaptr->rtnvalue = k_print(toPrint);
+            kcaptr->rtnvalue = k_printVT(toPrint);
             break;
     }
+    case PRINT:
+            kcaptr->rtnvalue = k_print(kcaptr->arg1);
+            break;
     case BIND:
             kcaptr->rtnvalue = k_bind(kcaptr->arg1);
             break;

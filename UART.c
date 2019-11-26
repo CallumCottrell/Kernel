@@ -60,7 +60,7 @@
 
 /* Globals */
 volatile char Data;     /* Input data from UART receive */
-queue *inQueue; //Data REC
+queue *inQueue; //Data coming in
 queue *outQueue; //Data to XMIT
 
 //Initialize UART and pass the alarm flag for polling in talk
@@ -132,7 +132,7 @@ void InterruptMasterEnable(void)
 }
 
 //Enqueue the contents of a string for output
-void print(char *string){
+void formOutQueue(char *string){
     int i = 0;
     while (string[i] != '\0')
         enqueue(outQueue, string[i++]);

@@ -40,96 +40,65 @@ int pkCall(unsigned int code, void *arg);
 
 
 void UARTReceive(){
-   int sender = 4;
+   int UARTbox = 4;
    //Bind to mailbox 4
-   bind(sender);
+   bind(UARTbox);
 
    char data;
-   //A queue for storing specifically VT-100 commands
-    queue VTQueueAddress;
-    queue *VTQueue = &VTQueueAddress;
-    initQueue(VTQueue);
-   //The index of the buffer where the command started
-   int vt100Command = 0;
-
+   char *string;
+   int messageSize;
    int senderID;
    void *msg;
+   int i;
 
-   //recv(4, &senderID, msg, 10);
-
-   print("\n\r>");
+   printVT(12,0,'\0');
+   printRequest("\r>");
    //While the user is still using the program
    while (1){
 
        //If the input queue was updated form the string
        //If the timer is set to go off, alarmPtr will be set
        //if the output queue is full output a character
-       while (!getSize(inQueue) && !alarmPtr && !getSize(outQueue));
+       //while (!getSize(inQueue) && !getSize(outQueue));
 
-//       if (alarmPtr){
-//           printAlarm();
-//           alarmPtr = 0;
-//       }
+       messageSize = recv(UARTbox,0, msg, 80);
 
-       if (getSize(outQueue)){
-           transmitByte();
-       }
+       string = (char*)msg;
 
-       else if (getSize(inQueue)) {
+      for (i = 0; i < messageSize; i++){
 
            //Remove the data from the input queue and determine how to handle it
-           data = dequeue(inQueue);
+           data = string[i];
 
            switch (data){
              //If the user hit the enter key
              case ENTER :
-                 //if the user is entering a VT100 command, run the command
-                 if (vt100Command){
-                     enqueue(VTQueue, NUL);
-                     //Send the command
-                     print(VTQueue->buffer);
-                     //Done executing command
-                     vt100Command = FALSE;
 
-                     clearQueue(VTQueue);
-
-                 }
-                 //else, the user entered time, date or alarm.
-                 else
-                     //processCommand();
-                     send(5,sender,commandQueue->buffer,getSize(commandQueue));
-
-                 break;
-            // Hitting the ESC key triggers a VT100 command
-             case ESCAPE :
-                 // Variable to give command to putty when enter key hit
-                 vt100Command = TRUE;
-                 //oldIndex = inQueue->write - 1;
-                 enqueue(VTQueue, data);
+                 //processCommand();
+                 send(6,UARTbox,commandQueue->buffer,getSize(commandQueue));
+                 //Wait until woken up by anybody
+                 recv(4,0, msg, 80);
                  break;
 
              //If the user hits backspace, remove entry from the command queue
              case BACKSPACE :
-                 if (!vt100Command){
-                     backspace(commandQueue);
-                     printChar(data);
-                 }
-                 else
-                     backspace(VTQueue);
+
+                 backspace(commandQueue);
+                 printRequest(data);
+
                  break;
 
              //Regular character entry is default. determine where to enqueue
              default :
-                 if (!vt100Command){
-                     //Form the string for parsing
-                     enqueue(commandQueue, data);
-                     //Store the data in the output queue
-                     enqueue(outQueue, data);
-                 }
-                 else {
-                     //Do not output the data, store the VT-100 command
-                     enqueue(VTQueue, data);
-                 }
+
+                 //Form the string for parsing
+                 enqueue(commandQueue, data);
+                 //Store the data in the output queue
+                // enqueue(outQueue, data);
+
+                 printRequest(data);
+
+
            }
        }
 
@@ -138,12 +107,6 @@ void UARTReceive(){
 
 }
 
-void check(){
-
-    volatile int wow;
-    volatile int wow2;
-
-}
 
 void outProcess(){
     //Bind to a mailbox
@@ -153,53 +116,59 @@ void outProcess(){
     int size;
 
     while(1){
+        printVT (5,0,'\0');
+        printRequest("outProcess waiting...");
         size = recv(6,0,msg,80);
-        pkCall(PRINT, msg);
-
+        printVT (5,0,'\0');
+        printRequest(msg);
     }
 
 }
-void goodbye(){
+void outputProcess(){
 
     //Bind to mailbox 5
     bind(5);
+    const char *commandString = "block all";
 
     int i =0;
 
     volatile int callum = 9;
     //char *hey = "hey";
-    char msg[40] = "hey";
+    char msg[80];
 
     unsigned int sender = 0;
+    while(1){
 
-    recv(5,&sender, msg, 40);
+    recv(5,&sender, msg, 80);
 
-    if (sender == 4)
-        nice(4);
+    }
 
 }
 
 //The process that always runs
 void lowest() {
-
-    //Allocate memory for the time struct and initalize variables
-    Time timeAddress = {0,0,0,0};
-    time = &timeAddress;
-
-    //Allocate memory for the date struct and initialize variables
-    Date dateAddress = {1,8,2019};
-    date = &dateAddress;
-
+    bind(8);
     char idle = 'A';
     while (1){
         updateTime();
-        if (time->seconds % 2 == 0){
+        /* Check for input data. If the user inputs any data, stop idling*/
+        if (getSize(inQueue))
+            send(6,8,inQueue->buffer,getSize(inQueue));
+
+        //Every 2 seconds, send idle
+        if (time->tenths % 10  == 0){
         // Form a CUP to print in the top right
-            printVT(3, 4, idle);
+            printVT(0, 80, idle);
+            printVT(12,0,'\0');
             idle++;
-            if (idle == 'Z')
+            //Once the alphabet is completed
+            if (idle == '[')
                 idle = 'A';
         }
+        //Ensure only one sent per second
+        while (time->tenths % 10 == 0)
+            updateTime();
+
     }
 
 }
@@ -281,8 +250,8 @@ struct CUPch uart_data;
     uart_data . col[0] = '0' + col / 10;
     uart_data . col[1] = '0' + col % 10;
     uart_data . cmdchar = 'H';
-    uart_data . nul = '/0';
+    uart_data . nul = '\0';
     uart_data . ch = ch;
-    return pkCall(PRINT, &uart_data);
+    return pkCall(PRINTVT, &uart_data);
 }
 

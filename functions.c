@@ -66,18 +66,28 @@ int k_getPID(){
 }
 
 //For handling prints to the screen
-int k_print(struct CUPch *toPrint){
+int k_printVT(struct CUPch *toPrint){
     char *string = (char*)toPrint;
     //Store the CUP in outQueue
+    formOutQueue(string);
 
-    print(string);
-
+    enqueue(outQueue,toPrint->ch);
+    enqueue(outQueue,'\0');
+    //print("hello world");
     while (getSize(outQueue))
         transmitByte();
 
-    printChar(toPrint->ch);
+    //printChar(toPrint->ch);
 }
 
+int k_print(char *string){
+
+    formOutQueue(string);
+
+    while(getSize(outQueue))
+        transmitByte();
+
+}
 /*Changes the priority of the running process. Process can lower itself below the
  * current highest priority and as a result become
  * "blocked" (not truly blocked, still in waiting to run queue) */
@@ -210,9 +220,18 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            memcpy(mboxList[recvNum].msg->msgLoc,msg,psize);
            *(mboxList[recvNum].msg->sender) = srcNum;
 
+           //store the next message temporarily
+           struct message *temp = mboxList[recvNum].msg->next;
+
+           //"free" the current message
+           deallocate(mboxList[recvNum].msg);
+
+           //Can be null - use temp because original message deallocated
+           mboxList[recvNum].msg =temp;
+
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
-           //NEED to change this - addPCB was clobbering the RUNNING process.
+
            //running[priorityLevel] = running[priorityLevel]->next;
            mboxList[recvNum].process->regSaved = 0;
            mboxList[recvNum].process->blocked = 0;
@@ -262,11 +281,12 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             //Save the sender
             *src = mboxList[recvNum].msg->sender;
 
+            struct message *temp = mboxList[recvNum].msg->next;
             //"Free" the message
             deallocate(mboxList[recvNum].msg);
 
             //Can be null
-            mboxList[recvNum].msg = mboxList[recvNum].msg->next;
+            mboxList[recvNum].msg = temp;
 
         }
         // Nothing to receive. Block!

@@ -10,7 +10,7 @@
 
 //Function prototypes
 extern void hello();
-extern void goodbye();
+extern void outputProcess();
 extern void lowest();
 extern void terminate();
 extern void UARTReceive();

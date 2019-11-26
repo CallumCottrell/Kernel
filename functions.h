@@ -12,7 +12,9 @@ void k_terminate();
 
 int k_getPID();
 
-int k_print(struct CUPch *toPrint);
+int k_printVT(struct CUPch *toPrint);
+
+int k_print(char *string);
 
 int k_nice(unsigned int newPriority);
 

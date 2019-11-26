@@ -92,7 +92,7 @@ int readTime(){
                 //Store the time to print in the output queue
                 char out[MAX_OUTPUT_LENGTH];
                 sprintf(out, "\n\r%d:%d:%d.%d", time->hours, time->minutes, time->seconds, time->tenths);
-                print(out);
+                formOutQueue(out);
 
             }
         else {
@@ -219,7 +219,7 @@ int readDate(){
                 //print the time to the screen by storing in output queue
                 char dateString[MAX_OUTPUT_LENGTH];
                 sprintf(dateString, "\n\r%d-%s-%d", date->day, monthStrings[date->month], date->year);
-                print(dateString);
+                formOutQueue(dateString);
             }
             else {
                 //remove the space between command and given time
@@ -359,7 +359,7 @@ int readAlarm(){
                 //Update date according to the tenths second counter
                 updateTime();
                 tenthSecondsAlarm = -1;
-                print("\n\rAlarm cleared");
+                formOutQueue("\n\rAlarm cleared");
             }
             else {
                 //remove the space between command and given time
@@ -380,7 +380,7 @@ void printAlarm(){
     char alarmString[MAX_OUTPUT_LENGTH];
     updateTime();
     sprintf(alarmString, "\n\r \x07 *ALARM* %d:%d:%d.%d \n\r>", time->hours, time->minutes, time->seconds, time->tenths);
-    print(alarmString);
+    formOutQueue(alarmString);
     tenthSecondsAlarm = -1; // Set to a time value that can't be hit
 }
 
@@ -421,7 +421,7 @@ int parseAlarm(void){
      hours = tempTime;
 
      sprintf(alarmPrint, "\n\rAlarm at %d:%d:%d.%d", hours, minutes, seconds, tenths);
-     print(alarmPrint);
+     formOutQueue(alarmPrint);
     }
     else
         return TRUE;

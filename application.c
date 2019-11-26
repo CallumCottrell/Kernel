@@ -187,9 +187,9 @@ void processCommand(){
 
         //If input failed give error message
         if (fail)
-            print("\n\r?");
+            formOutQueue("\n\r?");
 
-        print("\n\r>");
+        formOutQueue("\n\r>");
         clearQueue(commandQueue);
 
     }

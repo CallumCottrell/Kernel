@@ -13,7 +13,7 @@ extern void InterruptEnable(unsigned long InterruptIndex);
 extern void UART0_IntEnable(unsigned long flags);
 extern void UART0_IntHandler(void);
 extern void InterruptMasterEnable(void);
-extern void print(char *string);
+extern void formOutQueue(char *string);
 extern void printChar(char byte);
 extern void transmitByte();
 

@@ -18,7 +18,7 @@ Systick sample code with minor additions by Callum Cottrell
 
 //Counts the tenths of a second
 unsigned int tenthSecondsCounter;
-unsigned int hundredths;
+unsigned int hundredths=0;
 // Global pointer to determine if alarm is going off
 int alarmPtr=0;
 // The alarm time as set by the user
@@ -70,10 +70,10 @@ __asm("	cpsie	i");
 
 void SysTickHandler(void) //handler
 {
-    hundredths;
+
     hundredths++;
 //A tenth of a second has passed - increase the counter
-if ((hundredths % 0) == 0)
+if ((hundredths % 10) == 0)
     tenthSecondsCounter++; //tick
 
 //Need to check here to ensure that a tenth of a second is not missed.
