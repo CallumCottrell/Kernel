@@ -68,11 +68,14 @@ int k_getPID(){
 //For handling prints to the screen
 int k_print(struct CUPch *toPrint){
     char *string = (char*)toPrint;
-    //Store the string in outQueue
+    //Store the CUP in outQueue
+
     print(string);
-    //Print outqueue to the screen
-    while(getSize(outQueue))
+
+    while (getSize(outQueue))
         transmitByte();
+
+    printChar(toPrint->ch);
 }
 
 /*Changes the priority of the running process. Process can lower itself below the

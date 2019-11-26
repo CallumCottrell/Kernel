@@ -140,10 +140,11 @@ void print(char *string){
 
 //Prints one byte to the screen (useful for backspace)
 void printChar(char byte){
-
-    if((UART0_FR_R & UART_FR_TXFF))
+    disable();
+    if(!(UART0_FR_R & UART_FR_TXFF))
     UART0_DR_R = byte;
 
+    enable();
 }
 
 //Dequeue

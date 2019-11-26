@@ -68,16 +68,9 @@ void initKernel(){
     commandQueue = &commandQueueAddress;
     initQueue(commandQueue);
 
-    //A queue for storing specifically VT-100 commands
-    queue VTQueueAddress;
-    queue *VTQueue = &VTQueueAddress;
-    initQueue(VTQueue);
-
     //If this queue has data stored to it, it will be transmitted
-    queue outQueueBufferAddress;
-    outQueue = &outQueueBufferAddress;
+    outQueue = malloc(sizeof(queue));
     initQueue(outQueue);
-
     registersSaved = 0;
     /* Initialize UART */
     UART0_Init();           // Initialize UART0

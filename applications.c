@@ -195,7 +195,7 @@ void lowest() {
         updateTime();
         if (time->seconds % 2 == 0){
         // Form a CUP to print in the top right
-            printVT(1, 78, idle);
+            printVT(3, 4, idle);
             idle++;
             if (idle == 'Z')
                 idle = 'A';
@@ -279,7 +279,9 @@ struct CUPch uart_data;
     uart_data . line[1] = '0' + row % 10;
     uart_data . semicolon = ';';
     uart_data . col[0] = '0' + col / 10;
-    uart_data . line[1] = '0' + col % 10;
+    uart_data . col[1] = '0' + col % 10;
+    uart_data . cmdchar = 'H';
+    uart_data . nul = '/0';
     uart_data . ch = ch;
     return pkCall(PRINT, &uart_data);
 }
