@@ -23,8 +23,6 @@ extern int alarmTenthSeconds;
 extern Date *date;
 extern Time *time;
 extern queue *inQueue;
-extern queue *commandQueue;
-extern queue *outQueue;
 
 void assignR7(unsigned long);
 volatile int helloValue = 0;
@@ -35,69 +33,70 @@ int bind(unsigned int mboxNum);
 int nice(unsigned int newPriority);
 int printRequest(char *msg);
 int printVT(int row, int col, char ch);
-
+int inputRequest(char *input);
 int pkCall(unsigned int code, void *arg);
 
 
 void IOprocess(){
+
+   queue *commandQueue = malloc(sizeof(queue));
+   initQueue(commandQueue);
    int UARTbox = 4;
+
    //Bind to mailbox 4
    bind(UARTbox);
 
    char data;
-   char *string;
+   char input[MAX_BUFFER_SIZE];
+   char command[MAX_BUFFER_SIZE];
    int messageSize;
-   int senderID;
-   void *msg;
    int i;
-
+   int quit = 0;
    printVT(12,0,'\0');
    printRequest("\r>");
+
    //While the user is still using the program
-   while (1){
+   while (!quit){
 
-       //If the input queue was updated form the string
-       //If the timer is set to go off, alarmPtr will be set
-       //if the output queue is full output a character
-       //while (!getSize(inQueue) && !getSize(outQueue));
+      //Request an update on user input
+      messageSize = inputRequest(input);
 
-       messageSize = recv(UARTbox,0, msg, 80);
-
-       string = (char*)msg;
-
+      //While there is user input data to use
       for (i = 0; i < messageSize; i++){
 
            //Remove the data from the input queue and determine how to handle it
-           data = string[i];
+           data = input[i];
 
            switch (data){
              //If the user hit the enter key
-             case ENTER :
+             case ENTER :{
 
-                 send(6,UARTbox,commandQueue->buffer,getSize(commandQueue));
+                 //Form string for message
+                 int j;
+                 int size = getSize(commandQueue);
+
+                 for (j = 0; j < size; j++)
+                     command[j] = dequeue(commandQueue);
+                 command[j] = 0;
+                 send(6,UARTbox,(void*)command,size);
                  //Wait until woken up by anybody
-                 recv(4,0, msg, 80);
                  break;
-
+             }
              //If the user hits backspace, remove entry from the command queue
              case BACKSPACE :
 
                  backspace(commandQueue);
-                 printRequest(data);
+                 pkCall(PRINTCHAR, data);
 
                  break;
 
              //Regular character entry is default. determine where to enqueue
              default :
-
                  //Form the string for parsing
                  enqueue(commandQueue, data);
                  //Store the data in the output queue
                 // enqueue(outQueue, data);
-
-                 printRequest(data);
-
-
+                 pkCall(PRINTCHAR, data);
            }
        }
 
@@ -106,19 +105,24 @@ void IOprocess(){
 
 }
 
+//Expects a message of size equal to the queue size
+int inputRequest(char *message){
+    return pkCall(GETUART, message);
+}
 
 void outProcess(){
     //Bind to a mailbox
 
     bind(6);
-    void *msg;
+    char msg[80];
     int size;
-
+    int sender;
     while(1){
         printVT (5,0,'\0');
         printRequest("outProcess waiting...");
-        size = recv(6,0,msg,80);
-        printVT (5,0,'\0');
+        printVT (12,1,'\0');
+        size = recv(6,&sender,msg,80);
+        printVT (6,0,'\0');
         printRequest(msg);
     }
 

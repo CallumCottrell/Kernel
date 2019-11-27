@@ -47,7 +47,7 @@ void main (void) {
    regProcess(IOprocess, 1000, 5);
    regProcess(inProcess, 1001, 3);
    regProcess(lowest, 1004, 0);
-   regProcess(outProcess,1002, 4);
+   regProcess(outProcess,1002, 5);
    initKernel();
    SVC();
 
@@ -271,12 +271,16 @@ else /* Subsequent SVCs */
             kcaptr->rtnvalue = k_getPID();
             break;
 
-    case PRINTVT:{
-            kcaptr->rtnvalue = k_printVT(kcaptr->arg1);
+    case GETUART:
+            kcaptr->rtnvalue = k_input(kcaptr->arg1);
             break;
-    }
+
+    case PRINTVT:
+            k_printVT(kcaptr->arg1);
+            break;
+
     case PRINT:
-            kcaptr->rtnvalue = k_print(kcaptr->arg1);
+            k_print(kcaptr->arg1);
             break;
     case BIND:
             kcaptr->rtnvalue = k_bind(kcaptr->arg1);
@@ -286,6 +290,9 @@ else /* Subsequent SVCs */
             kcaptr->rtnvalue = k_unbind(kcaptr->arg1);
             break;
 
+    case PRINTCHAR:
+            k_printChar(kcaptr->arg1);
+            break;
     case SEND:
     {
             struct messageStruct *m;

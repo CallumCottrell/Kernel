@@ -12,9 +12,11 @@ void k_terminate();
 
 int k_getPID();
 
-int k_printVT(void *toPrint);
+void k_printVT(void *toPrint);
 
-int k_print(char *string);
+void k_print(char *string);
+
+void k_printChar(char byte);
 
 int k_nice(unsigned int newPriority);
 
@@ -25,8 +27,6 @@ int k_bind(unsigned int boxNum);
 int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size);
 
 int k_send(unsigned int recvNum, unsigned int send, void *msg, unsigned int size);
-
-int k_uart(unsigned char *msg);
 
 void nextProcess();
 

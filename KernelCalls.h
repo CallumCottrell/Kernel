@@ -1,7 +1,8 @@
 #ifndef KERNELCALLS_H_
 #define KERNELCALLS_H_
 
-enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE, BIND, UNBIND, SEND, RECV, PRINT, PRINTVT};
+enum kernelcallcodes {STARTUP, GETID, NICE, TERMINATE, BIND,
+    UNBIND, SEND, RECV, PRINT, PRINTVT, GETUART, PRINTCHAR};
 
 //Kernel Call arguments.
 struct kCallArgs

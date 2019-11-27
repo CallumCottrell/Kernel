@@ -11,7 +11,8 @@
 #include <stdio.h>
 #include "functions.h"
 #include "cqueue.h"
-
+#include "UART.h"
+#include <string.h>
 #define TRIGGER_PENDSV 0x10000000
 #define NVIC_INT_CTRL_R (*((volatile unsigned long *) 0xE000ED04))
 #define TRUE 1
@@ -22,6 +23,7 @@ extern int registersSaved;
 extern struct mailbox mboxList[50];
 extern struct message *msgList;
 extern queue *outQueue;
+extern queue *inQueue;
 
 void removePCB();
 void findNextProcess();
@@ -29,6 +31,19 @@ void processSwitch();
 int deallocate();
 struct message* allocate();
 
+
+//Expects an input string with size equal to the queue.
+//Returns 0 if the queue is empty at the moment
+int k_input(char *message){
+
+    int i = 0;
+
+    //load the message with the contents of the input queue
+    while(getSize(inQueue))
+        message[i++] = dequeue(inQueue);
+
+    return i;
+}
 /* The end of a process. Frees all memory associated with the process*/
 void k_terminate(){
 
@@ -66,7 +81,7 @@ int k_getPID(){
 }
 
 //For handling prints to the screen
-int k_printVT(void *toPrint){
+void k_printVT(void *toPrint){
     char *string = (char*)toPrint;
     struct CUPch *cup = (struct CUPch *)toPrint;
     //Store the CUP in outQueue
@@ -81,7 +96,7 @@ int k_printVT(void *toPrint){
     //printChar(toPrint->ch);
 }
 
-int k_print(char *string){
+void k_print(char *string){
 
     formOutQueue(string);
 
@@ -89,6 +104,14 @@ int k_print(char *string){
         transmitByte();
 
 }
+
+//Wraps the print char function in UART
+void k_printChar(char byte){
+
+    printChar(byte);
+
+}
+
 /*Changes the priority of the running process. Process can lower itself below the
  * current highest priority and as a result become
  * "blocked" (not truly blocked, still in waiting to run queue) */
@@ -138,7 +161,10 @@ int k_bind(unsigned int boxNumber){
         for (boxNumber = 1; boxNumber < 100; boxNumber++){
             //If there is no process using this mbox number
             if (!mboxList[boxNumber].process){
+                //initialize
                 mboxList[boxNumber].process = running[priorityLevel];
+                mboxList[boxNumber].msg = 0;
+                mboxList[boxNumber].blocked = 0;
                 return boxNumber;
             }
         }
@@ -217,6 +243,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            else {
                psize = size;
            }
+
            //transfer the message to the mailbox
            memcpy(mboxList[recvNum].msg->msgLoc,msg,psize);
            *(mboxList[recvNum].msg->sender) = srcNum;
