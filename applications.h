@@ -10,9 +10,9 @@
 
 //Function prototypes
 extern void hello();
-extern void outputProcess();
+extern void inProcess();
 extern void lowest();
 extern void terminate();
-extern void UARTReceive();
+extern void IOprocess();
 extern void outProcess();
 #endif /* APPLICATIONS_H_ */

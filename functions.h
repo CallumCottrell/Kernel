@@ -7,12 +7,12 @@
 
 #ifndef FUNCTIONS_H_
 #define FUNCTIONS_H_
-#include "process.h"
+
 void k_terminate();
 
 int k_getPID();
 
-int k_printVT(struct CUPch *toPrint);
+int k_printVT(void *toPrint);
 
 int k_print(char *string);
 

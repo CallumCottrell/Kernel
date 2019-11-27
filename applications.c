@@ -39,7 +39,7 @@ int printVT(int row, int col, char ch);
 int pkCall(unsigned int code, void *arg);
 
 
-void UARTReceive(){
+void IOprocess(){
    int UARTbox = 4;
    //Bind to mailbox 4
    bind(UARTbox);
@@ -74,7 +74,6 @@ void UARTReceive(){
              //If the user hit the enter key
              case ENTER :
 
-                 //processCommand();
                  send(6,UARTbox,commandQueue->buffer,getSize(commandQueue));
                  //Wait until woken up by anybody
                  recv(4,0, msg, 80);
@@ -124,7 +123,7 @@ void outProcess(){
     }
 
 }
-void outputProcess(){
+void inProcess(){
 
     //Bind to mailbox 5
     bind(5);

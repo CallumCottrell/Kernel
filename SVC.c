@@ -44,10 +44,10 @@ void initKernel();
 
 void main (void) {
 
-   //regProcess(UARTReceive, 1000, 3);
-   //regProcess(outputProcess, 1001, 3);
-   regProcess(lowest, 10, 0);
-   regProcess(outProcess,1002, 5);
+   regProcess(IOprocess, 1000, 5);
+   regProcess(inProcess, 1001, 3);
+   regProcess(lowest, 1004, 0);
+   regProcess(outProcess,1002, 4);
    initKernel();
    SVC();
 
@@ -272,8 +272,7 @@ else /* Subsequent SVCs */
             break;
 
     case PRINTVT:{
-        struct CUPch *toPrint = (struct CUPch *)kcaptr->arg1;
-            kcaptr->rtnvalue = k_printVT(toPrint);
+            kcaptr->rtnvalue = k_printVT(kcaptr->arg1);
             break;
     }
     case PRINT:

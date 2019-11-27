@@ -19,7 +19,7 @@
 extern struct pcb *running[6];
 extern volatile int priorityLevel;
 extern int registersSaved;
-extern struct mailbox mboxList[100];
+extern struct mailbox mboxList[50];
 extern struct message *msgList;
 extern queue *outQueue;
 
@@ -66,12 +66,13 @@ int k_getPID(){
 }
 
 //For handling prints to the screen
-int k_printVT(struct CUPch *toPrint){
+int k_printVT(void *toPrint){
     char *string = (char*)toPrint;
+    struct CUPch *cup = (struct CUPch *)toPrint;
     //Store the CUP in outQueue
     formOutQueue(string);
 
-    enqueue(outQueue,toPrint->ch);
+    enqueue(outQueue,cup->ch);
     enqueue(outQueue,'\0');
     //print("hello world");
     while (getSize(outQueue))
