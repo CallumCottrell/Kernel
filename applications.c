@@ -199,9 +199,11 @@ void idle() {
     while (1){
         updateTime();
         /* Check for input data. If the user inputs any data, stop idling*/
-        if (getSize(inQueue))
-            send(1,idleBox,inQueue->buffer,getSize(inQueue));
+        if (getSize(inQueue)){
 
+            send(1,idleBox,inQueue->buffer,getSize(inQueue));
+            dequeue(inQueue);
+        }
         //Every 2 seconds, send idle
         if (time->tenths % 10  == 0){
         // Form a CUP to print in the top right

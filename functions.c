@@ -245,7 +245,7 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            //Check all the messages waiting in the mailbox
            while (mboxList[recvNum].msg){
                //If this message has the correct sender or is receiving from any
-               if (*(mboxList[recvNum].msg->sender) == srcNum || !(mboxList[recvNum].msg->sender)){
+               if (*(mboxList[recvNum].msg->sender) == srcNum || !*(mboxList[recvNum].msg->sender)){
                    temp->next = mboxList[recvNum].msg->next;
                    break;
                }
