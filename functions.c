@@ -190,7 +190,7 @@ int k_bind(unsigned int boxNumber){
 int k_unbind(unsigned int boxNumber){
 
     //Can't unbind from number out of range
-    if (boxNumber > 100 || !boxNumber){
+    if (boxNumber > 50 || !boxNumber){
         return -1;
     }
     // If the mbox list's process is the running process we can unbind
@@ -236,6 +236,47 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            }
        //The process is blocked and waiting for this message
         else {
+
+           // Save the head of the singly linked list
+           struct message *head = mboxList[recvNum].msg;
+           // temp represents the previous message
+           struct message *temp = head;
+
+           //Check all the messages waiting in the mailbox
+           while (mboxList[recvNum].msg){
+               //If this message has the correct sender or is receiving from any
+               if (*(mboxList[recvNum].msg->sender) == srcNum || !(mboxList[recvNum].msg->sender)){
+                   temp->next = mboxList[recvNum].msg->next;
+                   break;
+               }
+               //Iterate through
+               else {
+                   //Store prev
+                   temp = mboxList[recvNum].msg;
+                   mboxList[recvNum].msg = mboxList[recvNum].msg->next;
+               }
+
+           }
+           //The mailbox wasnt expecting a message from this mailbox then store it
+           if (!mboxList[recvNum].msg){
+               //Allocate memory for the message coming in
+               struct message *msgPtr = allocate();
+               if (msgPtr){
+                   msgPtr->size = size;
+                   msgPtr->sender = srcNum;
+                   //msgPtr->data = (char *)malloc(size);
+
+                   // Copy the contents of the message into the newly allocated memory
+                   memcpy(msgPtr->data,msg,size);
+                   //Put the new message at the top of the list
+                   msgPtr->next = mboxList[recvNum].msg;
+                   mboxList[recvNum].msg = msgPtr;
+               }
+               //Failed due to lack of message space
+               else return -1;
+           }
+
+           else {
             //determine what size of message to use - smaller is used
            if (size > mboxList[recvNum].msg->size){
                psize = mboxList[recvNum].msg->size;
@@ -249,23 +290,27 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
            *(mboxList[recvNum].msg->sender) = srcNum;
 
            //store the next message temporarily
-           struct message *temp = mboxList[recvNum].msg->next;
+           temp = mboxList[recvNum].msg->next;
 
            //"free" the current message
            deallocate(mboxList[recvNum].msg);
 
-           //Can be null - use temp because original message deallocated
-           mboxList[recvNum].msg =temp;
+           //If the message received was at the head then go to the next
+           if (mboxList[recvNum].msg == head){
+               mboxList[recvNum].msg = temp;
+           }
+           else{
+               mboxList[recvNum].msg = head;
+           }
 
            //unblock the process that was trying to receive.
            addPCB(mboxList[recvNum].process, mboxList[recvNum].process->priority);
 
-           //running[priorityLevel] = running[priorityLevel]->next;
-           mboxList[recvNum].process->regSaved = 0;
            mboxList[recvNum].process->blocked = 0;
 
            //Process has been added - need to determine the new priority level
            processSwitch(FALSE);
+           }
        }
 
     }
@@ -281,22 +326,39 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
 int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size){
 
     unsigned int psize = -1;
-
+    int sendingSource;
     //Make sure that the calling process is the owner of the mailbox
     if (mboxList[recvNum].process == running[priorityLevel]){
 
         //There is a message waiting
         if (mboxList[recvNum].msg != 0){
 
-            //Should I be able to receive from a specific process?
-//            if (*src != 0){
-//            struct message *top = mboxList[recvNum].msg;
-//
-//                while (mboxList[recvNum].msg){
-//
-//
-//                }
-//            }
+        // Save the head of the singly linked list
+            struct message *head = mboxList[recvNum].msg;
+            // temp represents the previous message
+            struct message *temp = head;
+
+            //Check all the messages waiting in the mailbox for the desired sender
+            while (mboxList[recvNum].msg){
+                sendingSource = (mboxList[recvNum].msg->sender);
+                //If this message has the correct sender or is receiving from any
+                if (sendingSource == *src || !*src){
+                    temp->next = mboxList[recvNum].msg->next;
+                    break;
+                }
+                //Iterate through
+                else {
+                    //Store prev
+                    temp = mboxList[recvNum].msg;
+                    mboxList[recvNum].msg = mboxList[recvNum].msg->next;
+                }
+
+            }
+
+            if (!mboxList[recvNum].msg){
+                return -1;
+            }
+            else {
 
             if (mboxList[recvNum].msg->size > size)
                 psize = size;
@@ -309,13 +371,13 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             //Save the sender
             *src = mboxList[recvNum].msg->sender;
 
-            struct message *temp = mboxList[recvNum].msg->next;
+            temp = mboxList[recvNum].msg->next;
             //"Free" the message
             deallocate(mboxList[recvNum].msg);
 
             //Can be null
             mboxList[recvNum].msg = temp;
-
+            }
         }
         // Nothing to receive. Block!
         else {

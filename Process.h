@@ -29,6 +29,20 @@ unsigned long get_SP();
 void volatile save_registers();
 void volatile restore_registers();
 
+#define CLEAR_SCREEN    "\x1b[2J"
+#define CURSOR_SAVE     "\x1b""7"
+#define CURSOR_HOME     "\x1b[H"
+#define CLEAR_LINE      "\x1b[2K"
+#define HOME_COLOURS    "\x1b[0;30;47m"
+#define CURSOR_MIDDLE   "\x1b[20C"
+#define TERM_COLOURS    "\x1b[0;0;0m"
+#define CURSOR_RESTORE  "\x1b""8"
+
+#define CURSOR_LEFT     "\x1b[D"
+#define CURSOR_RIGHT    "\x1b[C"
+#define CURSOR_UP       "\x1b[A"
+#define CURSOR_DOWN     "\x1b[B"
+
 #define STACKSIZE   1024
 
 /* Cortex default stack frame */

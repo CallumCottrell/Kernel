@@ -45,8 +45,7 @@ void initKernel();
 void main (void) {
 
    regProcess(IOprocess, 1000, 5);
-   regProcess(inProcess, 1001, 3);
-   regProcess(lowest, 1004, 0);
+   regProcess(idle, 1004, 0);
    regProcess(outProcess,1002, 5);
    initKernel();
    SVC();
@@ -107,6 +106,11 @@ void initKernel(){
     msgList->next = 0;
     //point to the top of the message list
     msgList = top;
+
+    k_print(CLEAR_SCREEN);
+    k_print("\x1b[00;33H");
+    k_print("Kernel");
+
 }
 
 

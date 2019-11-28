@@ -14,8 +14,8 @@
  * of 80 characters. */
 typedef struct queueStruct {
     char buffer[MAX_BUFFER_SIZE]; //how do i store each character?
-    int write; // Position of the writing index
-    int read; // Position of the reading index
+    unsigned int write; // Position of the writing index
+    unsigned int read; // Position of the reading index
 
 } queue;
 

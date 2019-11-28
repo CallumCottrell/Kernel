@@ -35,13 +35,14 @@ int printRequest(char *msg);
 int printVT(int row, int col, char ch);
 int inputRequest(char *input);
 int pkCall(unsigned int code, void *arg);
+int getPID();
 
 
 void IOprocess(){
 
    queue *commandQueue = malloc(sizeof(queue));
    initQueue(commandQueue);
-   int UARTbox = 4;
+   int UARTbox = 1;
 
    //Bind to mailbox 4
    bind(UARTbox);
@@ -50,6 +51,7 @@ void IOprocess(){
    char input[MAX_BUFFER_SIZE];
    char command[MAX_BUFFER_SIZE];
    int messageSize;
+   char output[MAX_BUFFER_SIZE];
    int i;
    int quit = 0;
    printVT(12,0,'\0');
@@ -73,13 +75,27 @@ void IOprocess(){
 
                  //Form string for message
                  int j;
-                 int size = getSize(commandQueue);
+                 unsigned int size = getSize(commandQueue);
 
                  for (j = 0; j < size; j++)
                      command[j] = dequeue(commandQueue);
-                 command[j] = 0;
-                 send(6,UARTbox,(void*)command,size);
+
+                 /*Terminate the command with a null character outside the
+                 range of the original string*/
+                 size++;
+                 command[j] = '\0';
+
+                 printRequest("\x1b[2K \r>");
+                 send(6,UARTbox,(void*)command,size+1);
+                 send(7,UARTbox,(void*)command,size+1);
                  //Wait until woken up by anybody
+                 if (!strcmp("pause", command)){
+                     sprintf(output, "\nNow receiving on process # %d ", pkCall(GETID,0));
+                     printRequest(output);
+                     int zero = 0;
+                     recv(UARTbox,&zero,command,MAX_BUFFER_SIZE);
+                 }
+
                  break;
              }
              //If the user hits backspace, remove entry from the command queue
@@ -112,18 +128,45 @@ int inputRequest(char *message){
 
 void outProcess(){
     //Bind to a mailbox
-
-    bind(6);
-    char msg[80];
+    int boxNum = 6;
+    int otherBox = 7;
+    int printColumn = 0;
+    int printRow = 5;
+    bind(boxNum);
+    bind(otherBox);
+    char msg[MAX_BUFFER_SIZE];
+    char output[MAX_BUFFER_SIZE];
     int size;
-    int sender;
+    int sender = 1;
+    printVT (4,0,'\0');
+    sprintf(output, "OutProcess(%d) waiting for message from: %d", pkCall(GETID,0), sender);
+    printRequest(output);
     while(1){
-        printVT (5,0,'\0');
-        printRequest("outProcess waiting...");
-        printVT (12,1,'\0');
-        size = recv(6,&sender,msg,80);
-        printVT (6,0,'\0');
+
+        //Restore cup
+        printVT (12,2,'\0');
+
+        //Wait for a message
+        size = recv(boxNum,&sender,msg,80);
+
+        printVT (printRow++,printColumn,'\0');
+
+        //printRequest(CLEAR_LINE);
+
+        sprintf(output, "Msg from %d:", sender);
+
+        printRequest(output);
+
         printRequest(msg);
+
+        if (!strcmp(msg, "switch box") && boxNum == 6){
+            unbind(boxNum);
+            printColumn = 40;
+            printRow = 5;
+            //Now start receiving on the other box
+            boxNum = otherBox;
+        }
+
     }
 
 }
@@ -149,14 +192,15 @@ void inProcess(){
 }
 
 //The process that always runs
-void lowest() {
-    bind(8);
+void idle() {
+    int idleBox = 8;
+    bind(idleBox);
     char idle = 'A';
     while (1){
         updateTime();
         /* Check for input data. If the user inputs any data, stop idling*/
         if (getSize(inQueue))
-            send(6,8,inQueue->buffer,getSize(inQueue));
+            send(1,idleBox,inQueue->buffer,getSize(inQueue));
 
         //Every 2 seconds, send idle
         if (time->tenths % 10  == 0){
