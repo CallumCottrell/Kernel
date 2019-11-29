@@ -47,6 +47,7 @@ void main (void) {
    regProcess(IOprocess, 1000, 5);
    regProcess(idle, 1004, 0);
    regProcess(outProcess,1002, 5);
+   //regProcess(boringProcess,2000, 3);
    initKernel();
    SVC();
 

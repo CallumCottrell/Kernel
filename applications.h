@@ -10,7 +10,7 @@
 
 //Function prototypes
 extern void hello();
-extern void inProcess();
+extern void boringProcess();
 extern void idle();
 extern void terminate();
 extern void IOprocess();

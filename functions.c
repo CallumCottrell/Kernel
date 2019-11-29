@@ -93,7 +93,6 @@ void k_printVT(void *toPrint){
     while (getSize(outQueue))
         transmitByte();
 
-    //printChar(toPrint->ch);
 }
 
 void k_print(char *string){
@@ -264,7 +263,6 @@ int k_send(unsigned int recvNum, unsigned int srcNum, void *msg, unsigned int si
                if (msgPtr){
                    msgPtr->size = size;
                    msgPtr->sender = srcNum;
-                   //msgPtr->data = (char *)malloc(size);
 
                    // Copy the contents of the message into the newly allocated memory
                    memcpy(msgPtr->data,msg,size);
@@ -389,7 +387,7 @@ int k_recv(unsigned int recvNum, unsigned int *src, void *msg, unsigned int size
             //newMsg->data = malloc(size);
             newMsg->msgLoc = msg;
             newMsg->sender = src;
-
+            psize = size;
             mboxList[recvNum].msg = newMsg;
             running[priorityLevel]->blocked = 1;
 

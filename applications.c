@@ -46,7 +46,7 @@ void IOprocess(){
 
    //Bind to mailbox 4
    bind(UARTbox);
-
+   int any = 0;
    char data;
    char input[MAX_BUFFER_SIZE];
    char command[MAX_BUFFER_SIZE];
@@ -54,7 +54,7 @@ void IOprocess(){
    char output[MAX_BUFFER_SIZE];
    int i;
    int quit = 0;
-   printVT(12,0,'\0');
+   printVT(30,0,'\0');
    printRequest("\r>");
 
    //While the user is still using the program
@@ -62,6 +62,8 @@ void IOprocess(){
 
       //Request an update on user input
       messageSize = inputRequest(input);
+
+      //recv(1, any, input, MAX_BUFFER_SIZE);
 
       //While there is user input data to use
       for (i = 0; i < messageSize; i++){
@@ -90,11 +92,14 @@ void IOprocess(){
                  send(7,UARTbox,(void*)command,size+1);
                  //Wait until woken up by anybody
                  if (!strcmp("pause", command)){
-                     sprintf(output, "\nNow receiving on process # %d ", pkCall(GETID,0));
+                     printRequest(CLEAR_LINE);
+                     printVT(20,2,'\0');
+                     sprintf(output, "Now receiving on process # %d ", pkCall(GETID,0));
                      printRequest(output);
-                     int zero = 0;
-                     recv(UARTbox,&zero,command,MAX_BUFFER_SIZE);
+                     any = 0;
+                     recv(UARTbox,&any,command,MAX_BUFFER_SIZE);
                  }
+
 
                  break;
              }
@@ -118,7 +123,6 @@ void IOprocess(){
 
    }
 
-
 }
 
 //Expects a message of size equal to the queue size
@@ -139,55 +143,75 @@ void outProcess(){
     int size;
     int sender = 1;
     printVT (4,0,'\0');
-    sprintf(output, "OutProcess(%d) waiting for message from: %d", pkCall(GETID,0), sender);
+    sprintf(output, "PID:(%d) waiting for message from: %d", pkCall(GETID,0), sender);
     printRequest(output);
     while(1){
 
         //Restore cup
-        printVT (12,2,'\0');
+        printVT (30,2,'\0');
 
         //Wait for a message
         size = recv(boxNum,&sender,msg,80);
 
+        //Check if it was a valid receive
+        if (size > 0){
         printVT (printRow++,printColumn,'\0');
 
+        if (printRow > 10)
+            printRow = 5;
         //printRequest(CLEAR_LINE);
 
-        sprintf(output, "Msg from %d:", sender);
+        sprintf(output, "msg from %d to %d:", sender, boxNum);
 
         printRequest(output);
 
         printRequest(msg);
 
-        if (!strcmp(msg, "switch box") && boxNum == 6){
+        if (!strcmp(msg, "mbox 7") && boxNum == 6){
             unbind(boxNum);
             printColumn = 40;
             printRow = 5;
             //Now start receiving on the other box
             boxNum = otherBox;
         }
+        else if (!strcmp(msg, "mbox 6") && boxNum == 7){
+            boxNum = 6;
 
+        }
+        else if (!strcmp(msg, "nice lower")){
+            nice(4);
+        }
+        }
+        //if mbox cant be received from, do not keep checking
+        else {
+            break;
+        }
     }
 
+    sprintf(msg,"Terminating %d", pkCall(GETID,0));
+    printVT(2,0,'\0');
+    printRequest(msg);
+    printVT(30,2,'\0');
 }
-void inProcess(){
+void boringProcess(){
+
+
+    int boringBox = 2;
+
+    int receiveBox = 1;
 
     //Bind to mailbox 5
-    bind(5);
-    const char *commandString = "block all";
+    bind(boringBox);
 
-    int i =0;
+    char msg[MAX_BUFFER_SIZE];
 
-    volatile int callum = 9;
-    //char *hey = "hey";
-    char msg[80];
+    recv(boringBox, boringBox, msg, MAX_BUFFER_SIZE);
 
-    unsigned int sender = 0;
-    while(1){
-
-    recv(5,&sender, msg, 80);
-
-    }
+    printVT(21,0,'\0');
+    printRequest("Terminating process:");
+    sprintf(msg, "%d", pkCall(GETID,0));
+    printRequest(msg);
+    unbind(boringBox);
 
 }
 
@@ -201,14 +225,14 @@ void idle() {
         /* Check for input data. If the user inputs any data, stop idling*/
         if (getSize(inQueue)){
 
-            send(1,idleBox,inQueue->buffer,getSize(inQueue));
-            dequeue(inQueue);
+            send(1,idleBox,&idle,1);
+            //dequeue(inQueue);
         }
         //Every 2 seconds, send idle
         if (time->tenths % 10  == 0){
         // Form a CUP to print in the top right
             printVT(0, 80, idle);
-            printVT(12,0,'\0');
+            printVT(30,2,'\0');
             idle++;
             //Once the alphabet is completed
             if (idle == '[')

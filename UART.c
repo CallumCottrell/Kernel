@@ -57,7 +57,7 @@
 
 #define disable() __asm(" cpsid i")
 #define enable() __asm(" cpsie i")
-
+int zero = 0;
 /* Globals */
 volatile char Data;     /* Input data from UART receive */
 queue *inQueue; //Data coming in
@@ -116,6 +116,7 @@ void UART0_IntHandler(void)
         /* RECV done - clear interrupt and make char available to application */
         UART0_ICR_R |= UART_INT_RX;
         enqueue(inQueue, UART0_DR_R);
+        //k_send(1,zero,inQueue->buffer, getSize(inQueue));
     }
 
     if (UART0_MIS_R & UART_INT_TX)
