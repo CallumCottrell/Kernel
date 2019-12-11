@@ -1,6 +1,6 @@
 /*
- * applications.c
- *
+ * This file contains the processes that are registered to run in the OS.
+ * It also contains helper functions for these processes.
  *  Created on: Nov 3, 2019
  *      Author: callum cottrell B00712510
  */
@@ -16,17 +16,13 @@
 #include "time.h"
 #include "UART.h"
 
-
-extern int alarmPtr;
-extern int alarmTenthSeconds;
 // Global variables
 extern Date *date;
 extern Time *time;
 extern queue *inQueue;
 
+//Prototypes
 void assignR7(unsigned long);
-volatile int helloValue = 0;
-
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size);
 int recv(unsigned int dest, unsigned int *src, char *msg, unsigned int size);
 int bind(unsigned int mboxNum);
@@ -38,14 +34,16 @@ int pkCall(unsigned int code, void *arg);
 int getPID();
 
 
+//Process for taking input from the user, used for demonstrating
+//mailbox functionality.
 void IOprocess(){
 
    queue *commandQueue = malloc(sizeof(queue));
    initQueue(commandQueue);
-   int UARTbox = 1;
-
+   int UARTbox = 4;
    //Bind to mailbox 4
    bind(UARTbox);
+
    int any = 0;
    char data;
    char input[MAX_BUFFER_SIZE];
@@ -100,7 +98,6 @@ void IOprocess(){
                      recv(UARTbox,&any,command,MAX_BUFFER_SIZE);
                  }
 
-
                  break;
              }
              //If the user hits backspace, remove entry from the command queue
@@ -130,6 +127,8 @@ int inputRequest(char *message){
     return pkCall(GETUART, message);
 }
 
+//Process that waits for process to output through IPC.
+//Only purpose is to demonstrate ipc.
 void outProcess(){
     //Bind to a mailbox
     int boxNum = 6;
@@ -146,27 +145,19 @@ void outProcess(){
     sprintf(output, "PID:(%d) waiting for message from: %d", pkCall(GETID,0), sender);
     printRequest(output);
     while(1){
-
         //Restore cup
         printVT (30,2,'\0');
-
         //Wait for a message
         size = recv(boxNum,&sender,msg,80);
-
         //Check if it was a valid receive
         if (size > 0){
         printVT (printRow++,printColumn,'\0');
-
         if (printRow > 10)
             printRow = 5;
         //printRequest(CLEAR_LINE);
-
         sprintf(output, "msg from %d to %d:", sender, boxNum);
-
         printRequest(output);
-
         printRequest(msg);
-
         if (!strcmp(msg, "mbox 7") && boxNum == 6){
             unbind(boxNum);
             printColumn = 40;
@@ -176,7 +167,6 @@ void outProcess(){
         }
         else if (!strcmp(msg, "mbox 6") && boxNum == 7){
             boxNum = 6;
-
         }
         else if (!strcmp(msg, "nice lower")){
             nice(4);
@@ -193,29 +183,8 @@ void outProcess(){
     printRequest(msg);
     printVT(30,2,'\0');
 }
-void boringProcess(){
 
-
-    int boringBox = 2;
-
-    int receiveBox = 1;
-
-    //Bind to mailbox 5
-    bind(boringBox);
-
-    char msg[MAX_BUFFER_SIZE];
-
-    recv(boringBox, boringBox, msg, MAX_BUFFER_SIZE);
-
-    printVT(21,0,'\0');
-    printRequest("Terminating process:");
-    sprintf(msg, "%d", pkCall(GETID,0));
-    printRequest(msg);
-    unbind(boringBox);
-
-}
-
-//The process that always runs
+//The process that always runs in the background
 void idle() {
     int idleBox = 8;
     bind(idleBox);
@@ -224,11 +193,10 @@ void idle() {
         updateTime();
         /* Check for input data. If the user inputs any data, stop idling*/
         if (getSize(inQueue)){
-
             send(1,idleBox,&idle,1);
             //dequeue(inQueue);
         }
-        //Every 2 seconds, send idle
+        //Every 1 second send a char
         if (time->tenths % 10  == 0){
         // Form a CUP to print in the top right
             printVT(0, 80, idle);
@@ -247,7 +215,7 @@ void idle() {
 }
 
 
-//Function that LR points to for all processes
+//Function that LR contains to for all processes
 void terminate(){
     struct kCallArgs kArgs;
     kArgs.code = TERMINATE;
@@ -270,7 +238,7 @@ int pkCall(unsigned int code, void *arg){
     return kArgs.rtnvalue;
 
 }
-/* */
+/* Send through IPC*/
 int send(unsigned int dest, unsigned int src, void *msg, unsigned int size){
     struct messageStruct pmsg;
     pmsg.destMb = dest;

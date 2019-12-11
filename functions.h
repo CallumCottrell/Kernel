@@ -1,5 +1,5 @@
 /*
- * functions.h
+ * Prototypes for the kernel functions.
  *
  *  Created on: Nov 4, 2019
  *      Author: Callum Cottrell

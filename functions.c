@@ -89,12 +89,13 @@ void k_printVT(void *toPrint){
 
     enqueue(outQueue,cup->ch);
     enqueue(outQueue,'\0');
-    //print("hello world");
+
     while (getSize(outQueue))
         transmitByte();
 
 }
 
+//For printing to the screen
 void k_print(char *string){
 
     formOutQueue(string);
@@ -186,6 +187,9 @@ int k_bind(unsigned int boxNumber){
     return -1;
 }
 
+/*
+ * For unbinding from the currently bound process.
+ */
 int k_unbind(unsigned int boxNumber){
 
     //Can't unbind from number out of range

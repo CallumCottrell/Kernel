@@ -1,4 +1,7 @@
 /*
+ * This file contains the kernel SVC calls
+ *
+ * Additions by Callum
  * Kernel code: Supervisor call (SVC) handler example
  * ECED 4402
  *
@@ -25,10 +28,9 @@
 #define PENDSV_LOWEST_PRIORITY 0X00E00000
 #define THUMB_MODE 0x01000000
 
-//A pcb that is running for each priority level
+//A pcb that is running for each priority level. the 6th is idle.
 struct pcb *running[6]={0,0,0,0,0,0};
 volatile int priorityLevel;
-volatile int registersSaved;
 struct mailbox mboxList[100];
 struct message *msgList;
 struct pcb *blocked;
@@ -39,6 +41,7 @@ extern queue *inQueue;
 extern queue *commandQueue;
 extern queue *outQueue;
 
+//Prototypes
 int regProcess();
 void initKernel();
 
@@ -47,7 +50,7 @@ void main (void) {
    regProcess(IOprocess, 1000, 5);
    regProcess(idle, 1004, 0);
    regProcess(outProcess,1002, 5);
-   //regProcess(boringProcess,2000, 3);
+
    initKernel();
    SVC();
 
@@ -114,19 +117,15 @@ void initKernel(){
 
 }
 
-
+// Called every 1/100th of a second. Switches processes
 void pendSVHandler(){
 
-    if (!running[priorityLevel]->regSaved){
      save_registers();
-     running[priorityLevel]->regSaved = 0;
-     }
      nextProcess();
      restore_registers();
 
 }
 
-//Trying to pass readTime() to this
 //Register a process that may be used. Only called at the initialization stage, for each process.
 int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
 
@@ -134,7 +133,6 @@ int regProcess(void (*func_name)(), unsigned int pid, unsigned int priority) {
     struct pcb *newPCB = malloc(sizeof(struct pcb));
     newPCB->PID = pid;
     newPCB->priority = priority;
-    newPCB->regSaved = 0;
     newPCB->blocked = 0;
     //Add the PCB to its priority queue
     addPCB(newPCB, priority);

@@ -1,8 +1,8 @@
 /*
- * applications.h
+ * The prototypes for registering functions in the main.
  *
  *  Created on: Nov 3, 2019
- *      Author: callu
+ *      Author: callum
  */
 
 #ifndef APPLICATIONS_H_
